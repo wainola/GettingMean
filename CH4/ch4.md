@@ -32,3 +32,28 @@ En el esquema general de la app tendremos:
 ```
 `app.js` (aplicacion) -> `index.js` (rutas) -> `locations.js others.js` (controladores).
 ```
+
+Notamos que tenemos un solo archivo de rutas y un controlador para cada una de las colecciones que vamos a utilizar. Este esquema nos ayuda a organizar nuestro codigo.
+
+# Requiriendo los archivos controladores.
+
+Los archivos `locations.js` y `others.js` estaran en la carpeta `app_server` en el subdirectorio `controllers`.
+
+Estos archivos seran requeridos en el archivo `index.js` del directorio routes:
+
+```javascript
+var express = require('express');
+var router = express.Router();
+var ctrlLocations = require('../controllers/locations');
+var ctrlOthers = require('../controllers/others');
+
+/* GET pagina principal */
+router.get('/', ctrlMain.index);
+
+module.exports = router;
+```
+
+Ahora tenemos dos variables que podemos referir en nuetro archivo route.
+
+
+# Configurando las rutas.
