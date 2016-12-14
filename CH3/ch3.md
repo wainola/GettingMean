@@ -296,3 +296,32 @@ Si nos logeamos en el navegador veremos tambien la app de heroku generada. Esto 
 # Haciendo el deploy.
 
 Tenemos la aplicacion en un repo de git y hemos creado un nuevo repo remoto en heroku. El repo remoto esta vacio, por lo que necesitamos hacer un push de los contenidos de nuestro repo local al repo de heroku.
+
+# Iniciando web dyno en heroku.
+
+`heroku` usa el concepto de dynos para correr y escalar las aplicaciones. Mientras mas dynos se tenga, mas recursos del sistema y procesos se tienen disponibles para la aplicacion. Añadir mas dynos cuando la app se hace mas grande es relativamente sencillo.
+
+`heroku` tambien tiene un modo gratuito que es excelente para prototipear y construir aplicaciones. Se obtiene un web dyno de manera gratuita.
+
+Antes de ver la app online debemos añadir un dyno. Esto se hace con `heroku ps:scale web=1`. Se recibe un mensaje de respuesta y estamos listos. Para abrir la aplicacion en una url en vivo hacemos `heroku open`.
+
+# Facilidad de actualizacion.
+
+Ahora que tenemos nuestra app de heroku andando actualizarlo es relativamente sencillo:
+
+```
+git add .
+git commit -m "Mensaje"
+git push heroku master
+```
+
+# Resumen.
+
+Hemos visto lo siguiente:
+
+* crear una aplicacion en express.
+* manejar las dependencias de la aplicacion con el `package.json`.
+* modificar `express` para cumplir los requerimientos MVC.
+* rutas y controladores.
+* crear nuevos modulos en node.
+* hacer el deploy en Heroku usando git.
