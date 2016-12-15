@@ -1,10 +1,10 @@
 /* Obtener pagina principal*/
 module.exports.homelist = function(req, res){
-  res.render('index', {title: 'Home'});
+  res.render('locations-list', {title: 'Home'});
 };
 /* Obtener la pagina 'Location info'*/
 module.exports.locationInfo = function(req, res){
-  res.render('index', {title: 'Location Info'});
+  res.render('location-info', {title: 'Location Info'});
 };
 
 /* Obtener la pagina 'Add review'*/

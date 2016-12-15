@@ -228,3 +228,237 @@ html
     script(src='/javascript/jquery-3.1.1.min.js')
     script(src='/bootstrap/js/bootstrap.min.js')
 ```
+
+# Constuyendo la plantilla.
+
+Cuando se construyen la plantillas es bueno partir desde las partes mas sencillas de una pagina. En este caso seria la pagina de inicio o el `homepage`.
+
+# Definiendo el esquema.
+
+En el caso del tutorial que estamos siguiendo, el principal objetivo de la pagina `homepage` es exhibir una lsita de lugares. Cada lugar tendra un nombre, direccion, distancia entre otros datos. Tambien se añadiran el header en la pagina, asi como una lista en contexto.
+
+# Configurando la vista y los controladores.
+
+**El primer paso es crear una nueva vista, es decir un nuevo archivo vista y linkearlo al controlador. Por lo que en la carpeta `app_server/views` vamos a hacer una copia del archivo `index.jade` y lo guardamos como `locations-list.jade`. Este es el primer paso.
+
+El segundo paso es decirle al controlador para la `homepage`, que queremos usar esta nueva vista. Por lo que modificamos el archivo `locations.js` en el directorio `app_server/controllers`.**
+
+```javascript
+/* Obtener pagina principal*/
+module.exports.homelist = function(req, res){
+  res.render('locations-list', {title: 'Home'});
+};
+/* Obtener la pagina 'Location info'*/
+module.exports.locationInfo = function(req, res){
+  res.render('index', {title: 'Location Info'});
+};
+
+/* Obtener la pagina 'Add review'*/
+module.exports.addReview = function(req, res){
+  res.render('index', {title: 'Add review'});
+};
+```
+
+# Copiando la plantilla de layout.jade.
+
+El codigo de la pagina principal queda de la siguiente manera:
+
+```jade
+extends layout
+
+block content
+  #banner.page-header
+    .row
+      .col-lg-6
+        h1 Loc8r
+          smalll &nbsp;Find places to work with wifi near you!
+  .row
+    .col-xs-12.col-sm-8
+      .row.list-group
+        .col-xs-12.list-group-item
+          h4
+            a(href='/location') Starcups
+            small &nbsp;
+              span.glyphicon.glyphicon-star
+              span.glyphicon.glyphicon-star
+              span.glyphicon.glyphicon-star
+              span.glyphicon.glyphicon-star-empty
+              span.glyphicon.glyphicon-star-empty
+            span.badge.pull-rigth.badge-default 100m
+          p.address 125 High Street, Reading, RG6 1PS
+          p
+            span.label.label-warning Hot drinks
+            | &nbsp;
+            span.label.label-warning Food
+            | &nbsp;
+            span.label.label-warning Premiun wifi
+            | &nbsp;
+
+        .col-xs-12.list-group-item
+          h4
+            a(href='/location') Starcups
+            small &nbsp;
+              span.glyphicon.glyphicon-star
+              span.glyphicon.glyphicon-star
+              span.glyphicon.glyphicon-star
+              span.glyphicon.glyphicon-star-empty
+              span.glyphicon.glyphicon-star-empty
+            span.badge.pull-rigth.badge-default 100m
+          p.address 125 High Street, Reading, RG6 1PS
+          p
+            span.label.label-warning Hot drinks
+            | &nbsp;
+            span.label.label-warning Food
+            | &nbsp;
+            span.label.label-warning Premiun wifi
+            | &nbsp;
+
+        .col-xs-12.list-group-item
+          h4
+            a(href='/location') Starcups
+            small &nbsp;
+              span.glyphicon.glyphicon-star
+              span.glyphicon.glyphicon-star
+              span.glyphicon.glyphicon-star
+              span.glyphicon.glyphicon-star-empty
+              span.glyphicon.glyphicon-star-empty
+            span.badge.pull-rigth.badge-default 100m
+          p.address 125 High Street, Reading, RG6 1PS
+          p
+            span.label.label-warning Hot drinks
+            | &nbsp;
+            span.label.label-warning Food
+            | &nbsp;
+            span.label.label-warning Premiun wifi
+            | &nbsp;
+
+
+    .col-xs-12.col-sm-4
+      p.lead Looking for wifit and a seat? Loc8r helps you find placer to work when out and about. Perhaps with coffee, cake or a pint? Let Loc8r help you find the place you're looking for.  
+```
+
+# Añadiendo el resto.
+
+Ahora que tenemos la pagina de localidades lista tenemos que añadir las siguientes vistas a nuestro proyecto:
+
+* detalles.
+* añadir reseñas.
+* about.
+
+# Pagina detalles.
+
+La pagina detalles tiene lo siguiente:
+
+* nombre.
+* direccion.
+* rating.
+* horarios.
+* facilidades.
+* localizacion en el mapa.
+* reseñas:
+  * rating.
+  * nombre del reseñador.
+  * fecha de la reseña.
+  * texto de la reseña.
+* boton para añadir reseñas.
+* texto para configurar el contexto de la pagina.
+
+# Previo.
+
+Como siempre debemos modificar nuestro archivo `locations.js` en nuestro directorio `controllers`:
+
+```javascript
+/* Obtener pagina principal*/
+module.exports.homelist = function(req, res){
+  res.render('locations-list', {title: 'Home'});
+};
+/* Obtener la pagina 'Location info'*/
+module.exports.locationInfo = function(req, res){
+  res.render('location-info', {title: 'Location Info'});
+};
+
+/* Obtener la pagina 'Add review'*/
+module.exports.addReview = function(req, res){
+  res.render('index', {title: 'Add review'});
+};
+```
+Notamos que modificamos el modulo que obtiene la pagina `location-info`.
+
+# La vista.
+
+Añadimos la vista al archivo `location-info`:
+
+```jade
+extends layout
+
+include _includes/sharedHTMLfunctions
+
+block content
+  .row.page-header: .col-lg-12
+      h1= pageHeader.title
+  .row
+    .col-xs-12.col-md-9
+      .row
+        .col-xs-12.col-sm-6
+          p.rating
+            +outputRating(location.rating)
+          p= location.address
+          .panel.panel-primary
+            .panel-heading
+              h2.panel-title Opening hours
+            .panel-body
+              each time in location.openingTimes
+                p
+                  | #{time.days} :
+                  if time.closed
+                    | closed
+                  else
+                    | #{time.opening} - #{time.closing}
+          .panel.panel-primary
+            .panel-heading
+              h2.panel-title Facilities
+            .panel-body
+              each facility in location.facilities
+                span.label.label-warning
+                  span.glyphicon.glyphicon-ok
+                  | &nbsp;#{facility}
+                | &nbsp;
+        .col-xs-12.col-sm-6.location-map
+          .panel.panel-primary
+            .panel-heading
+              h2.panel-title Location map
+            .panel-body
+              img.img-responsive.img-rounded(src="http://maps.googleapis.com/maps/api/staticmap?center=#{location.coords.lat},#{location.coords.lng}&zoom=17&size=400x350&sensor=false&markers=#{location.coords.lat},#{location.coords.lng}&scale=2")
+      .row
+        .col-xs-12
+          .panel.panel-primary.review-panel
+            .panel-heading
+              a.btn.btn-default.pull-right(href="/location/review/new") Add review
+              h2.panel-title Customer reviews
+            .panel-body.review-container
+              each review in location.reviews
+                .row
+                  .review
+                    .well.well-sm.review-header
+                      span.rating
+                        +outputRating(review.rating)
+                      span.reviewAuthor #{review.author}
+                      small.reviewTimestamp #{review.timestamp}
+                    .col-xs-12
+                      p !{(review.reviewText).replace(/\n/g, '<br/>')}
+    .col-xs-12.col-md-3
+      p.lead #{location.name} #{sidebar.context}
+      p= sidebar.callToAction
+```
+
+Le damos un poco de estilo en el archivo `style.css`:
+
+```css
+.review {padding-bottom: 5px;}
+.panel-body.review-container {padding-top: 0;}
+.review-header {margin-bottom: 10px;}
+.reviewAuthor {margin: 0 5px;}
+.reviewTimestamp {color: #ccc;}
+```
+
+Ahora podemos ir a la direccion `localhost:3000/location` para ver el resultado.
