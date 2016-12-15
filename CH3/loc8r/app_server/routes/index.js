@@ -1,8 +1,14 @@
 var express = require('express');
 var router = express.Router();
-var ctrlMain = require('../controllers/main');
+var ctrlLocations = require('../controllers/locations');
+var ctrlOther = require('../controllers/others');
 
-/* GET pagina principal */
-router.get('/', ctrlMain.index);
+/* Locaciones de las paginas.*/
+router.get('/', ctrlLocations.homelist);
+router.get('/locations', ctrlLocations.locationInfo);
+router.get('/location/review/new', ctrlLocations.addReview);
+
+/* Pagina otros */
+router.get('/about', ctrlOther.about);
 
 module.exports = router;
