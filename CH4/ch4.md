@@ -630,6 +630,104 @@ Algunas observaciones:
 * el signo `=` luego del `h1` significa que el contenido esta siendo obtenido desde el codigo, en este caso el objeto js `pageHeader`.
 * los `{}` son usados para insertar datos en paetes especificas.
 
-```
 # Referenciando datos con jade
+
+Exiten dos modos de referenciar datos cuando trabajamos con las plantillas en jade: La primera se llamada **interpolación** y utiliza el `#{datos}`. Usualmente se utiliza de la siguiente manera:
+
+```jade
+h1 Welcome to #{pageHeader.title}
 ```
+Si los datos contienen html por razones de seguriad escapara. Si queremos que el navegador renderice cualquier HTML contenido en un grupo de datos debemos:
+
+```jade
+h1 Welcome to !{pageHeader.title}
+```
+El segundo metodo consiste el mostrar los datos que son regulados por el codigo. En ves de insertar los datos en un string, construimos los datos usando javascript. Esto se hace con:
+
+```jade
+h1= "Welcome to " + pageHeader.title
+```
+
+# Lidiando con datos complejos y reiterativos.
+
+Respecto a las locaciones que tenemos en nuestra pagina inicial, lo que tenemos son datos reiterativos de:
+
+* nombre
+* rating
+* distancia
+* direccion
+* facilidades
+
+Tomando esos datos podemos crear un objeto en JS y guardar todos esos datos:
+
+```javascript
+{
+  name: 'Starcups',
+  address: '125 High Street, Reading, RG6 1PS',
+  rating: 3,
+  facilities: ['Hot drinks', 'Food', 'Premiun wifi'],
+  distance: '100m'
+}
+```
+
+Estos son todos los datos que necesitamos para una sola locacion. Para multiples locaciones necesitamos necesariamente un arreglo.
+
+# Añadiendo datos reiterativos en un arreglo.
+
+Para el caso de todas las locaciones necesitamos crear un arreglo de objetos que representen a las locaciones. Actualizamos el archivo de los controladores, particularmente la funcion que renderiza las localidades:
+
+```javascript
+module.exports.homelist = function(req, res){
+  res.render('locations-list', {
+    title: 'Loc8r - find a placer to work with wifi',
+    pageHeader: {
+      title: 'Loc8r',
+      strapline: 'Find places to work with wifi near you!'
+    },
+    locations: [{
+      name: 'Starcups',
+      address: '125 High Street, Reading, RG6 1PS',
+      rating: 3,
+      facilities: ['Hot drinks', 'Food', 'Premiun wifi'],
+      distance: '100m'
+    }, {
+      name: 'Cafe Hero',
+      address: '125 High Street, Reading, RG6 1PS',
+      rating: 4,
+      facilities: ['Hot drinks', 'Food', 'Premiun wifi'],
+      distance: '200m'
+    }, {
+      name: 'Burguer Queen',
+      address: '125 High Street, Reading, RG6 1PS',
+      rating: 2,
+      facilities: ['Food', 'Premiun wifi'],
+      distance: '250 m'
+    }]
+  });
+}
+```
+
+Tenemos aca un arreglo de objetos de tres locaciones. Ahora necesitamos que la vista renderice estas locaciones.
+
+# Iterando sobre las locaciones.
+
+El controlador le enviara un arreglo a jade con las locaciones. Jade ofrece una sintaxis para iterar sobre un arreglo. La sintaxis es `each location in locations`.
+
+En nuestro archivo de vista tenemos:
+
+```jade
+.col-xs-12.list-group-item
+  h4
+    a(href='/location') Starcups
+```
+
+Lo que podemos hacer es utilizar el metodo de iteracion de jade para poder recorrer el arreglo:
+
+```jade
+each location in locations
+  .col-xs-12.list-group-item
+    h4
+      a(href='/location')= location.name
+```
+
+Esto producira la iteracion deseada sobre los nombres de las locaciones.
