@@ -558,3 +558,78 @@ block content
         | <br></br>
         | Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. LOLUt enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. LOLDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 ```
+
+Tenemos añadidas todas las vistas de nuestro sitio. ¿Lo que sigue? Sacaremos informacion de las vistas y añadiremos datos en lo controladores.
+
+# Sacandos los datos de la vista.
+
+Uno de los objetivos finales de el modelo MVC es tener vistas sin contenido y datos. Las vistas deberian solo ser alimentadas con datos que se presentan a los usuarios finales, al mismo tiempo que son agnosticos referentes a los datos que se presentan al usuario.
+
+Las vistas en este caso necesitan una estructura de datos, pero lo que esta dentro de estas no es relevante.
+
+Dentro del paradigma MVC el **modelo** es el que sostiene los datos, y los controladores lo que hacen es procesar esos datos y las vistas finalmente rendenrizan los datos. Hasta este momento no estamos lidiando con los modelos todavia, por lo que ahora trabajaremos solamente con las vistas y los controladores.
+
+Para hacer las vistas debemos tomar los datos de los contenidos fuera de éstas para insertarlos en los controladores.
+
+Partiendo por la pagina principal le quitaremos los contenidos y pondremos en su lugar variables del contenido. El controlador luego pasa los valores de eas variables en las vistas.
+
+# Moviendo los datos a los controladores.
+
+Tomamos entonces los elementos de la pagina `locations-list.jade` y los movemos al controlador `locations.js`. Veamos un ejemplo pequeño:
+
+```jade
+#banner.page-header
+  .row
+    .col-lg-6
+      h1 Loc8r
+        smalll &nbsp;Find places to work with wifi near you!
+```
+
+Ahora en el archivo `locations.js` tenemos:
+
+```javascript
+module.exports.homelist = function(req, res){
+  res.render('locations-list', {title: 'Home'});
+};
+```
+
+Este pedazo de codigo indica que ya estamos enviado datos a la pagina con la funcion `res.render()` que es la encargada de enviar la vista que tenemos hecha en nuestro archivo jade. Aca el controlador `homelist` envia el objeto `{title: 'Home'}` a la vista. Esto lo que hace es que pone el string `Home` en la etiqueta html `title` que esta en nuestro archivo principal `layout`.
+
+# Actualizando el controlador.
+
+Actualizamos el controlador de la siguiente manera:
+
+```javascript
+module.exports.homelist = function(req, res){
+  res.render('locations-list', {
+    title: 'Loc8r - find a placer to work with wifi',
+    pageHeader: {
+      title: 'Loc8r',
+      strapline: 'Find places to work with wifi near your!'
+    }
+  });
+};
+```
+
+Es una buena pagina que el titulo y el strapline esten agrupados juntos en el objeto `pageHeader`.
+
+# Actualizando la vista.
+
+Ahora podemos actualizar la vista:
+
+```jade
+#banner.page-header
+  .row
+    .col-lg-6
+      h1= pageHeader.title
+        smalll &nbsp;#{pageHeader.strapline}
+```
+
+Algunas observaciones:
+
+* el signo `=` luego del `h1` significa que el contenido esta siendo obtenido desde el codigo, en este caso el objeto js `pageHeader`.
+* los `{}` son usados para insertar datos en paetes especificas.
+
+```
+# Referenciando datos con jade
+```
