@@ -495,3 +495,51 @@ module.exports.addReview = function(req, res){
   res.render('location-review-form', {title: 'Add review'});
 };
 ```
+
+Añadimos la vista para esta pagina:
+
+```jade
+extends layout
+
+block content
+  .row.page-header
+    .col-lg-12
+      h1 Review Starcups
+
+      .row
+        .col-xs-12.col-md-6
+          form.form-horizontal(action='/location', method='get', role='form')
+            .form-group
+              label.col-xs-10.col-sm-2.control-label(for='name') Name
+              .col-xs-12.col-sm-10
+                input#name.form-control(name='name')
+            .form-group
+              label.col-xs-10.col-sm-2.control-label(for='rating') Rating
+              .col-xs-12.col-sm-2
+                select#rating.form-control.input-sm(name='rating')
+                  option 5
+                  option 4
+                  option 3
+                  option 2
+                  option 1
+            .form-group
+              label.col-sm-2.control-label(for='review') Review
+              .col-sm-10
+                textarea#review.form-control(name='review', rows='5')
+              button.btn.btn-default.pull-right Add my review
+        .col-xs-12.col-md-4
+```
+
+# Pagina about.
+
+Esta es la pagina final de prototipo. Nuevamente debemos modificar el archivo de los controladores, en este caso el archivo de `other.js`.
+
+```javascript
+module.exports.about = function(req, res){
+  res.render('generic-text', {title: 'About'});
+};
+```
+
+Luego creamos la vista de la pagina generando un archivo `generic-text.jade` en el directorio `views`:
+
+```jade
