@@ -485,3 +485,13 @@ Le damos un poco de estilo en el archivo `style.css`:
 Ahora podemos ir a la direccion `localhost:3000/location` para ver el resultado.
 
 # Añadiendo la pagina de reseñas.
+
+Esta pagina es relativamente sencilla. Solo necesita tener la informacion acerca de los datos de quienes reseñan.
+
+El primer paso es actualizar nuestro archivo `controllers` en nuestro directorio `app_server` para que pueda utilizar una nueva vista llamada `location-review-form`:
+
+```javascript
+module.exports.addReview = function(req, res){
+  res.render('location-review-form', {title: 'Add review'});
+};
+```
