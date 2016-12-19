@@ -731,3 +731,174 @@ each location in locations
 ```
 
 Esto producira la iteracion deseada sobre los nombres de las locaciones.
+
+Para lidiar con el resto de los datos, podemos producir el siguiente codigo en jade. Recordamos usar el iterador que provee jade que es `each location in locations`:
+
+
+```jade
+each location in locations
+  .col-xs-12.list-group-item
+    h4
+      a(href='/location')= location.name
+      small &nbsp;
+        span.glyphicon.glyphicon-star
+        span.glyphicon.glyphicon-star
+        span.glyphicon.glyphicon-star
+        span.glyphicon.glyphicon-star-empty
+        span.glyphicon.glyphicon-star-empty
+      span.badge.pull-rigth.badge-default= location.distance
+    p.address= location.address
+    p
+      each facility on location.facilities
+      span.label.label-warning= facility
+      | &nbsp;
+```
+
+Para el caso de las estrellas necesitaremos implementar un poco de js.
+
+Para exhibir las estrellas de las reseñas vamos a usar un poco de js dentro de jade. Lo que haremos sera mezclar un poco de js con ciertos elementos sintacticos de jade. Para añadir codigo que esta dentro de una linea en jade utilizamos `-`. El codigo quedara como sigue:
+
+```jade
+- for(var i = 1; i <= location.rating; i++)
+  span.glyphicon.glyphicon-star
+- for(i = location.rating; i < 5; i++)
+  span.glyphicon.glyphicon-star-empty
+```
+
+La sintaxis es parecida a javascript con la diferencia que no tenemos los `{}`. En vez de eso el codigo es definido por identacion. Notar tambien que mezclamos codigo con jade. La primera linea esta diciendo que por cada vez que se evalue el ciclo como verdadero, que ejecute el codigo de jade. Notar que el segundo ciclo, si la variable `i` resulta ser menor al valor maximo de estrellas, se añaden entonces las estrellas menores.
+
+# Usando mixins y creando un esquema reusable.
+
+El codigo que hemos usado para generar las estrellas de rating resulta util para otros escenarios en que necesitamos generar nuestro contenido de manera mas dinamica.
+
+Jade permite crear componentes que pueden ser re-usados a traves de lo que se conocen como `mixins`.
+
+# Definiendo mixins en jade.
+
+Un mixin en jade es basicamente una funcion. Se pueden definir los mixins al comienzo del archivo y usarlo en multiples partes de este.
+
+```jade
+mixin welcome
+  p Welcome
+```
+
+Esto lo que hara es desplegar el parrafo `welcome` cada vez que sea invocado. Los mixins tambien pueden aceptar parametros como codigo JS. Esto es particularmente util para desplegar las distintas reseñas.
+
+El siguiente codigo muestra como queremos definir la exhibicion de las estrellas del rating de las localidades.
+
+```jade
+mixin outputRating(rating)
+  - for(var i = 1; i <= rating; i++)
+    span.glyphicon.glyphicon-star
+  - for(i = rating; i < 5; i++)
+    span.glyphicon.glyphicon-star-empty
+```
+
+# Llamando los mixins de js.
+
+Queremos usar los mixins. La sintaxis para invocarlos es bien sencilla. Hacemos `+welcome` y va a llamar el mixin `welcome` que creamos mas arriba.
+
+Tambien podemos llamar un mixin con parametros. Lo que podemos hacer es enviar los parametros que necesitamos dentro de los mixins. Anteriormente habiamos definido el siguiente codigo:
+
+```jade
+- for(var i = 1; i <= location.rating; i++)
+  span.glyphicon.glyphicon-star
+- for(i = location.rating; i < 5; i++)
+  span.glyphicon.glyphicon-star-empty
+```
+
+Ahora podemos convertir todo esto en un mixin y simplemente llamar:
+
+```jade
+small &nbsp;
+  +outputRating(location.rating)
+```
+
+# Usando includes.
+
+Para pemitir que un mixin sea llamado por otro archivo jade debemos generar un archivo include. Esto es bien sencillo.
+
+En nuestro directorio `app_server/views` creamos una subcarpeta llamada `called_includes`. En esta carpeta creamos un nuevo archivo llamado `sharedHTMLfunctions.jade` y copiamos nuestro mixin que definimos anteriormente.
+
+Una vez guardado el archivo, vamos a nuestro archivo `layout` y usamos la palabra `include` seguida por la ruta del archivo que queremos incluir.
+
+El codigo final del controlador y del archivo jade es:
+
+```javascript
+/* Obtener pagina principal*/
+module.exports.homelist = function(req, res){
+  res.render('locations-list', {
+    title: 'Loc8r - find a placer to work with wifi',
+    pageHeader: {
+      title: 'Loc8r',
+      strapline: 'Find places to work with wifi near you!',
+    },
+    sidebar: 'Looking for wifi and seat? Loc8r helps you find places to work when out and about. Perhaps with coffe, cake or a pint? Let Loc8r help you find the place you\'re looking for.',
+    locations: [{
+      name: 'Starcups',
+      address: '125 High Street, Reading, RG6 1PS',
+      rating: 3,
+      facilities: ['Hot drinks', 'Food', 'Premiun wifi'],
+      distance: '100m'
+    }, {
+      name: 'Cafe Hero',
+      address: '125 High Street, Reading, RG6 1PS',
+      rating: 4,
+      facilities: ['Hot drinks', 'Food', 'Premiun wifi'],
+      distance: '200m'
+    }, {
+      name: 'Burguer Queen',
+      address: '125 High Street, Reading, RG6 1PS',
+      rating: 2,
+      facilities: ['Food', 'Premiun wifi'],
+      distance: '250 m'
+    }]
+  });
+}
+/* Obtener la pagina 'Location info'*/
+module.exports.locationInfo = function(req, res){
+  res.render('location-info', {title: 'Location Info'});
+};
+
+/* Obtener la pagina 'Add review'*/
+module.exports.addReview = function(req, res){
+  res.render('location-review-form', {title: 'Add review'});
+};
+```
+
+```jade
+extends layout
+
+include called_includes/sharedHTMLfunctions
+
+block content
+  #banner.page-header
+    .row
+      .col-lg-6
+        h1= pageHeader.title
+          smalll &nbsp;#{pageHeader.strapline}
+
+  .row
+    .col-xs-12.col-sm-8
+      .row.list-group
+      each location in locations
+        .col-xs-12.list-group-item
+          h4
+            a(href='/location')= location.name
+            small &nbsp;
+              +outputRating(location.rating)
+            span.badge.pull-rigth.badge-default= location.distance
+          p.address= location.address
+          p
+            each facility on location.facilities
+            span.label.label-warning= facility
+            | &nbsp;
+
+
+    .col-xs-12.col-sm-4
+      p.lead= sidebar
+```
+
+Notamos que hemos reducido drasticamente el tamaño del archivo jade que teniamos antes al integrar dinamicamente los datos a la vista.
+
+# Actualizando el resto de las vistas y los controladores.
