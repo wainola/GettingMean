@@ -902,3 +902,22 @@ block content
 Notamos que hemos reducido drasticamente el tamaño del archivo jade que teniamos antes al integrar dinamicamente los datos a la vista.
 
 # Actualizando el resto de las vistas y los controladores.
+
+Para actualizar los datos del resto de las vistas debemos tener en cuenta:
+
+* mirar los datos de cada vista.
+* crear la estructura para esos datos en el controlador.
+* replazar los datos en la vista con referencias al controlador.
+* ver si podemos usar codigo que ya hemos generado.
+
+# Resumen de lo aprendido.
+
+En este capitulo lo que vimos fue:
+
+* defincion y creacion de rutas con Express.
+* creacion de modulos en Node para usar controladores.
+* usar distintos controladores para manejar las rutas.
+* creacion de vistas usando bootstrap y jade.
+* utilizar componentes reusables con jade.
+* mostrar datos dinamicos usandos las plantillas de jade.
+* pasar datos de los controladores a las vistas.
