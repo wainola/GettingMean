@@ -62,3 +62,51 @@ require('./app_server/models/db');
 ```
 
 Como no vamos a exportar ninguna funcion en el archivo `db.js` no necesitamos asignarlo a alguna variable. Solo necesitamos que este ahi. Ahora podemos reiniciar la aplicacion. No deberia haber ningun problema, y ya deberiamos tener mongoose trabajando para nosotros.
+
+# Creando la conexion con Mongoose.
+
+Para crear la conexion con Mongoose debemos declarar una `URI` para nuestra base de datos, y pasarla al metodo `conect` de mongoose. Una `URI` de una bd es un string que sigue el siguiente constructo:
+
+`mongodb://username:password@localhost:27027/database`
+
+Los parametros username, password y port son opcionales. Por lo que nuestra `URI` va a ser relativamente sencilla. Dado que tenemos mongodb instalado en nuestra maquina local, vamos a añadir el siguiente snippet de codigo a nuestro archivo `db.js` para crear las conexiones con nuestra base de datos:
+
+```javascript
+var dbURI = 'mongodb://localhost/Loc8r'
+mongoose.connect(dbURI);
+```
+
+Para verificar que todo este funcionando correctamente tenemos que generar un evento de conexion.
+
+**Observacion: el libro se salta pasos respecto a como trabajar con Mongo. Los siguientes son los pasos para verificar que mongo este trabajando y no produzca un error de conexion.**
+
+1. hacemos en la termina en el directorio de nuestra app: `brew services start mongodb`. Esto inicia el servicio de mongo.
+2. luego en la misma terminal: `mongod`. Se inicia la base de datos.
+3. finalmente si queremos corroborar que mongo esta activado le damos `mongo` y se inica el REPL de mongo en donde podemos verificar las bases de datos que tenemos etc.
+
+# Monitoreando las conexiones con los eventos de conexion en mongoose.
+
+Con Mongoose se publicaran los eventos basados en los estados de conexion y estos eventos en general son bastantes sencillos de enganchar en nuestra aplicacion. Vamos a usar eventos para ver cuando la conexion esta hecha y cuando ocurre un error y la conexion se detiene. Cuando alguno de estos eventos ocurren vamos a logear un mensaje en la consola.
+
+```javascript
+mongoose.connection.on('connected', function(){
+  console.log('Mongoose connected to ' + dbURI);
+});
+mongoose.connection.on('error', function(err){
+  console.log('Mongoose connection error: ' + err);
+});
+mongoose.connection.on('disconnected', function(){
+  console.log('Mongoose disconected');
+});
+```
+Cuando la aplicacion se reinicie con nodemon deberiamos ver el mensaje de que de conexcion con la `dbURI` que establecimos.
+
+# Cerrando una conexion con Mongoose.
+
+Cerrar una conexion con Mongoose cuando la conexion termina es una buena practica asi como abrirla cuando comienza a usarse la app. La conexion tiene dos elementos: una en nuestra aplicacion, y otra en MongoDB. Mongo necesita saber cuando queremos cerrar la conexion para que no mantenga elementos redundantes de conexion abiertos.
+
+Para monitorear las conexiones necesitamos escuchar a los procesos en node. Debemos escuchar un proceso llamado `SIGINT`.
+
+Si estamos usando `nodemon` para reiniciar la app automaticamente tambien deberemos escuchar un proceso llamado `SIGUSR2`. Heroku usa otro evento llamado `SIGTERM` por lo que necesitaremos escucharlo a el tambien.
+
+# Capturando los eventos de finalizacion de procesos.
