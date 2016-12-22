@@ -110,3 +110,93 @@ Para monitorear las conexiones necesitamos escuchar a los procesos en node. Debe
 Si estamos usando `nodemon` para reiniciar la app automaticamente tambien deberemos escuchar un proceso llamado `SIGUSR2`. Heroku usa otro evento llamado `SIGTERM` por lo que necesitaremos escucharlo a el tambien.
 
 # Capturando los eventos de finalizacion de procesos.
+
+Con todos estos eventos, una vez que los capturamos vamos a prevenir que sus comportamientos por defecto sucedan. Para eso tenemos que asegurarnos que reiniciamos el comportamiento requerdo luego de que cerremos la conexion en mongoose.
+
+Para hacer eso necesitamos tres escuchadores de eventos y una funcion para cerrar la conexion con la base de datos. Cerrar la db es un actividad *asincronica*, por lo que vamos a tener que pasarle una funcion que al cerrar o abrir la conexion sea un callback. Mientras estamos en eso podemos enviar un mensaje a la terminal confirmando que la conexion se ha cerrado. Podemos envolver todo esto en una funcion llamada `gracefulShutdown`:
+
+```javascript
+var gracefulShutdown = function(msg, callback){
+  //cerramos la conexion pasando una funcion anonima.
+  mongoose.connection.close(function(){
+    console.log('Mongoose disconnected through ' + msg);
+    callback();
+  });
+};
+```
+
+Ahora necesitamos llamar a la funcion cuando la aplicacion termina, o cuando nodemon se reinicia. En el siguiente codigo vemos los escuchadores de eventos de los cuales hablabamos:
+
+```javascript
+process.once('SIGUSR2', function(){
+  gracefulShutdown('nodemon restart', function(){
+    process.kill(process.pid, 'SIGUSR2');
+  });
+});
+process.on('SIGINT', function(){
+  gracefulShutdown('app termination', function(){
+    process.exit(0);
+  });
+});
+process.on('SIGTERM', function(){
+  gracefulShutdown('Heroku app shutdown', function(){
+    process.exit(0);
+  });
+});
+```
+
+Cada vez entonces que la aplicacion termina la conexion con la db es cerrada. Similarmente cuando nodemon reinicia la aplicacion tambien cierra la conexion. Notamos que para el caso de nodemon solo usamos el evento once, ya que queremos escuchar por el evento `SIGUSR2` solamente una vez, y porque nodemon tambien escucha por el mismo evento y no queremos que lo capture todas las veces.
+
+# Recapitulacion del archivo `db.js`.
+
+Recapitulando un poco tenemos que:
+
+* definimos una conexion con la db.
+* abrimos la conexion con mongoose cuando la aplicacion se inicia.
+* monitoreamos los eventos de conexion con mongoose.
+* monitoreamos algunos procesos de node como eventos, que nos permiten cerrar las conexiones con mongoose.
+
+El codigo complejo del archivo `db.js` es el siguiente:
+
+```javascript
+var mongoose = require('mongoose');
+var dbURI = 'mongodb://localhost/Loc8r';
+mongoose.connect(dbURI);
+
+mongoose.connection.on('connected', function(){
+  console.log('Mongoose connected to ' + dbURI);
+});
+mongoose.connection.on('error', function(err){
+  console.log('Mongoose connection error: ' + err);
+});
+mongoose.connection.on('disconnected', function(){
+  console.log('Mongoose disconected');
+});
+// definimos la funcion para cerrar las conexiones.
+var gracefulShutdown = function(msg, callback){
+  //cerramos la conexion pasando una funcion anonima.
+  mongoose.connection.close(function(){
+    console.log('Mongoose disconnected through ' + msg);
+    callback();
+  });
+};
+//eventos que escuchan los procesos de node para cerrar correctamente las conexiones.
+// reinicio de nodemon.
+process.once('SIGUSR2', function(){
+  gracefulShutdown('nodemon restart', function(){
+    process.kill(process.pid, 'SIGUSR2');
+  });
+});
+// finalizacion de la app.
+process.on('SIGINT', function(){
+  gracefulShutdown('app termination', function(){
+    process.exit(0);
+  });
+});
+// finalizacion en Heroku.
+process.on('SIGTERM', function(){
+  gracefulShutdown('Heroku app shutdown', function(){
+    process.exit(0);
+  });
+});
+```
