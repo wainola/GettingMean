@@ -200,3 +200,9 @@ process.on('SIGTERM', function(){
   });
 });
 ```
+
+El codigo de mas arriba es muy resusable ya que los eventos que estamos escuchando siempre son los mismos.
+
+# Porque modelar los datos.
+
+  
