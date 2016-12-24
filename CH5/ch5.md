@@ -359,3 +359,201 @@ var locationSchema = new mongoose.Schema({
 ```
 
 El campo `2dsphere` es critico pues permite a mongo hacer las consultas sobre el indice.
+
+# Creando schemas mas complejos con subdocumentos.
+
+Hasta el momento hemos definido un schema de datos bien sencillo en donde tenemos arreglos de string y strings propiamente tales. Vamos en todo caso a complejizar aun mas la manera en que definimos el schema.
+
+Tenemos que nuestra pagina principal nos permite hacer click en las locaciones. Cuando hacemos click tenemos datos que estan siendo nuevamente transmitidos de manera dinamica desde nuestro controlador `locations.js` a taves de la plantilla de jade.
+
+```javascript
+location: {
+    name: 'Starcups',
+    address: '125 High Street, Reading, RG6 1PS',
+    rating: 3,
+    facilities: ['Hot drinks', 'Food', 'Premium wifi'],
+    coords: {
+        lat: 51.455041,
+        lng: -0.9690884
+    },
+    openingTimes: [{
+        days: 'Monday - Friday',
+        opening: '7:00am',
+        closing: '7:00pm',
+        closed: false
+    }, {
+        days: 'Saturday',
+        opening: '8:00am',
+        closing: '5:00pm',
+        closed: false
+    }, {
+        days: 'Sunday',
+        closed: true
+    }],
+    reviews: [{
+        author: 'Nicolas Riquelme',
+        rating: 5,
+        timestamp: '17 de Diciembre 2016',
+        reviewText: 'What a great place. I can\'t say enough good things about it.'
+    }, {
+        author: 'Charlie Chaplin',
+        rating: 3,
+        timestamp: '14 de junio del 2017',
+        reviewText: 'It was okay. Coffee wasn\'t great, but the wifi was fast.'
+    }]
+}
+```
+En la propiedad reviews lo que tenemos es un arreglo de objetos, asi como tambien lo tenemos para el caso de los horarios de apertura.
+
+En bases de datos relacionales se crean dos tablas separadas para el caso de los horarios y las reseñas y se unen a traves de una consulta cuando necesitamos la informacion. En mongo tenemos una base de datos documental, por lo que todo lo que pertenece a un documento pariente debe permanecer en ese documento. En mongo tenemos el concepto de `subdocumento` para guardar datos que estan siendo repetitivos o datos que estan anidados, en este caso los datos de las reseñas y los datos de los horarios. Los `subdocumentos` son como los documentos propiamente tales en el sentido que contienen su propio schema y cada uno tiene su propio `_id` que mongo les asigna. Sin embargo los subdocumentos estan anidados dentro de los documentos y solo pueden accesados a traves una ruta del documento.
+
+# Usando schemas anidados en mongoose para definir subdocumentos.
+
+Los subdocumentos son definidos en mongoose usando schemas anidados. Para eso definiremos un nuevo schema para un subdocumento. Partiremos con los horarios de apertura de las locaciones. Notar que este schema que crearemos necesita estar en el mismo archivo que el schema de las locaciones, pero debe ir despues del schema `locationSchema`.
+
+```javascript
+var openingTimeSchema = new mongoose.Schema({
+  days: {type: String, required: true},
+  opening: String,
+  closing: String,
+  closed: {type: Boolean, required: true}
+});
+```
+
+Este schema es bastante sencillo y mapea sobre los datos que tenemos en el controlador. Hemos requerido dos campos, el campo `closed` y el `days`.
+
+Para anidar este schema dentro de `locationSchema` es bastante sencillo:
+
+```javascript
+var mongoose = require('mongoose');
+
+var locationSchema = new mongoose.Schema({
+  name: {type: String, required: true},
+  address: String,
+  rating: {type: Number, "default": 0, min: 0, max: 5},
+  facilities: [String],
+  coords: {type: [Number], index: '2dsphere'}
+  openingTimes: [openingTimeSchema]
+});
+```
+
+Con esto puesto podemos añadir multiples subdocumentos de una locacion dada, y estos seria guardados en esta locacion del documento. Un ejemplo de ello seria el siguiente documento en Mongo con el subdocumento openingTimes:
+
+```javascript
+{
+"_id": ObjectId("52ef3a9f79c44a86710fe7f5"),
+"name": "Starcups",
+"address": "125 High Street, Reading, RG6 1PS",
+"rating": 3,
+"facilities": ["Hot drinks", "Food", "Premium wifi"], "coords": [-0.9690884, 51.455041],
+"openingTimes": [{
+    "_id": ObjectId("52ef3a9f79c44a86710fe7f6"),
+    "days": "Monday - Friday",
+    "opening": "7:00am",
+    "closing": "7:00pm",
+    "closed": false
+  }, {
+    "_id": ObjectId("52ef3a9f79c44a86710fe7f7"),
+    "days": "Saturday",
+    "opening": "8:00am",
+    "closing": "5:00pm",
+    "closed": false
+  }, {
+    "_id": ObjectId("52ef3a9f79c44a86710fe7f8"),
+    "days": "Sunday",
+    "closed": true
+}]
+}
+```
+
+Con este schema ya definido nos moveremos ahora al siguiente schema correspondiente a as reseñas.
+
+# Añadiendo un segundo conjunto de subdocumentos.
+
+Añadimos entonces el segundo subdocumento con su correspondiente schema y luego lo añadimos al final en nuestro archivo `locations.js`:
+
+```javascript
+var reviewSchema = new mongoose.Schema({
+  author: String,
+  rating: {type: Number, "default": 0, min: 0, max: 5},
+  reviewText: String,
+  createdOn: {type: Date, "default": Date.now}
+});
+```
+
+Insertamos este schema en nuestro `locationSchema`:
+
+```javascript
+var mongoose = require('mongoose');
+
+var reviewSchema = new mongoose.Schema({
+  author: String,
+  rating: {type: Number, "default": 0, min: 0, max: 5},
+  reviewText: String,
+  createdOn: {type: Date, "default": Date.now}
+});
+
+var openingTimeSchema = new mongoose.Schema({
+  days: {type: String, required: true},
+  opening: String,
+  closing: String,
+  closed: {type: Boolean, required: true}
+});
+
+var locationSchema = new mongoose.Schema({
+  name: {type: String, required: true},
+  address: String,
+  rating: {type: Number, "default": 0, min: 0, max: 5},
+  facilities: [String],
+  coords: {type: [Number], index: '2dsphere'}
+  openingTimes: [openingTimeSchema],
+  reviews: [reviewSchema]
+});
+```
+Que representa nuestro schema final para los datos de nuestra pagina relativa a las locaciones.
+
+Un documento de mongo mapeado con el schema que hemos definido seria como el que sigue:
+
+```javascript
+{
+  "_id": ObjectId("52ef3a9f79c44a86710fe7f5"),
+  "name": "Starcups",
+  "address": "125 High Street, Reading, RG6 1PS",
+  "rating": 3,
+  "facilities": ["Hot drinks", "Food", "Premium wifi"],
+  "coords": [-0.9690884, 51.455041],
+  "openingTimes": [{
+    "_id": ObjectId("52ef3a9f79c44a86710fe7f6"),
+    "days": "Monday - Friday",
+    "opening": "7:00am",
+    "closing": "7:00pm",
+    "closed": false
+  }, {
+    "_id": ObjectId("52ef3a9f79c44a86710fe7f7"),
+    "days": "Saturday",
+    "opening": "8:00am",
+    "closing": "5:00pm",
+    "closed": false
+  }, {
+    "_id": ObjectId("52ef3a9f79c44a86710fe7f8"),
+    "days": "Sunday",
+    "closed": true
+}],
+"reviews": [{
+            "_id": ObjectId("52ef3a9f79c44a86710fe7f9"),
+            "author": "Simon Holmes",
+            "rating": 5,
+            "createdOn": ISODate("2013-07-15T23:00:00Z"),
+            "reviewText": "What a great place. I can\'say enough good things about it."
+          }, {
+            "_id": ObjectId("52ef3a9f79c44a86710fe7fa"),
+            "author": "Charlie Chaplin",
+            "rating": 3,
+            "createdOn": ISODate("2013-06-15T23:00:00Z"),
+            "reviewText": "It was okay. Coffee wasn't great, but the wifi was fast."
+          }]
+}
+```
+Esto nos deberia dar una idea de como se ven los documento en mongo, incluidos los subdocumentos que se basaron el subschemas que definimos. Notamos que podemos leerlos porque son JSON aunque mongo lo que hace es almacenar BSON que son JSON binarios.
+
+# Compilar schemas en los modelos.
