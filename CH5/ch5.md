@@ -557,3 +557,78 @@ Un documento de mongo mapeado con el schema que hemos definido seria como el que
 Esto nos deberia dar una idea de como se ven los documento en mongo, incluidos los subdocumentos que se basaron el subschemas que definimos. Notamos que podemos leerlos porque son JSON aunque mongo lo que hace es almacenar BSON que son JSON binarios.
 
 # Compilar schemas en los modelos.
+
+Una aplicacion no interactua con los schemas de manera directa cuando se trabajan con los datos. La interaccion de los datos se hace a traves de los modelos.
+
+En mongoose un modelo es una version compilada de los schemas. Una vez compilada una instancia del modelo mapea directamente a una instancia de un solo documento en nuestra db. Es a traves de esta relacion uno a uno que el modelo puede crear, leer, guardar y borrar datos.
+
+Esta aproximacion hace que trabajar con mongoose sea relativamente sencillo.
+
+# Compilando el modelo desde el schema.
+
+Cualquier cosa con la palabra `compiling` suele sonar a algo complicado, pero en mongoose hacer la compilacion del schema en el modelo es relativamente sencillo.
+
+Para hacer la compilacion tenemos que agregar el siguiente codigo en `locationSchema`:
+
+```javascript
+mongoose.model('Location', locationSchema);
+```
+
+El primer parametro del metodo hace referencia al nombre del modelo compilado. El segundo es la referencia al schema. **El codigo anterior lo añadimos despues de la definicion de nuestro schema general.**
+
+# Usando la shell de MongoDB para crear una base de datos y añadir datos.
+
+Para construir nuestra app Loc8r vamos a crear una nueva base de datos de manera manual y de la misma forma iremos añadiendo datos para ir probando. Esto implica que creamos una version particular de Loc8r para efectos de testeo y para poder trabajar directamente con MongoDB y probar cosas.
+
+# Basicos de la shell de mongo.
+
+Para iniciar el shell de mongo hacemos `mongo` en la terminal. Para hacer un listado de las dbs hacemos: `show dbs`.
+
+Para usar una base de datos especial hacemos: `use local`. Se nos retorna un mensaje en que hemos cambiado a esa db para trabajar.
+
+# Listando las colecciones en una base de datos.
+
+Una vez que estamos en una base de datos particular es relativamente sencillo listar las coleciones de esa base de datos. Hacemos `show collections`. Si estamos usando por ejemplo la db `local` se nos retorna el mensaje `startup_log`.
+
+# Viendo los contenidos de una coleccion.
+
+La shell de mongo nos permite hacer consultas a los elementos de una base de datos. El modo de construir esa consulta es: `db.collectionName.find(queryObject)`. El `queryObject` se usa para especificar lo que estamos tratando de encontrar. La consulta mas sencilla es una vacia, que retorna todos los documentos de una coleccion.
+
+Por ejemplo: `db.startup_log.fin()` devolvera toda las colecciones de esta base de datos.
+
+# Creando una base de datos en mongo.
+
+En realidad no se crea un db, lo que hacemos es que partimos usandola. Hacemos en la shell: `use Loc8r`.
+
+# Creando una coleccion y documentos.
+
+De manera similar no necesitamos crear explicitamente una coleccion en mongo. Se creara sola al momento en que nosotros guardemos por primera vez los datos:
+
+Para establecer una correspondencia con el modelo vamos a querer tener una coleccion de `locations`. Podemos crear y guardar una coleccion al pasar el objeto de datos con el comando save como sigue:
+
+```javascript
+db.locations.save({
+  name: 'Starcups',
+  address: '125 High Street, Reading, RG6 1PS',
+  rating: 3,
+  facilities: ['Hot drinks', 'Food', 'Premium wifi'], coords: [-0.9690884, 51.455041],
+  openingTimes: [{
+    days: 'Monday - Friday',
+    opening: '7:00am',
+    closing: '7:00pm',
+    closed: false
+  }, {
+    days: 'Saturday',
+    opening: '8:00am',
+       closing: '5:00pm',
+    closed: false
+  }, {
+    days: 'Sunday',
+    closed: true
+  }]
+});
+```
+
+Con este paso creamos una coleccion nueva en `locations` y ademas añadimos nuestro primer documento en la coleccion. Luego en la misma terminal podemos hacer `show collections` y veremos nuestra coleccion creada y podemos hacer la consulta respectiva. En este caso consultamos haciendo `db.locations.find();` lo cual nos retornara todos los documentos que la coleccion tiene. El retorno de la informacion no tendra cambios de linea, por lo que si queremos que se nos retorne un formato mas amigable de lectura hacemos `db.locations.find().pretty();`
+
+# Añadiendo subdocumentos.
