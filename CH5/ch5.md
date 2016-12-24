@@ -205,4 +205,157 @@ El codigo de mas arriba es muy resusable ya que los eventos que estamos escuchan
 
 # Porque modelar los datos.
 
-  
+Cuando entramos en la pagina principal de nuestra aplicacion tenemos una serie de locaciones sobre las cuales tenemos datos y podemos escribir reseñas. La pagina en este sentido carga los datos dinamicos de estas locaciones, datos que estan definidos en el archivo de los controladores de nuestra aplicacion. Los datos en los controladores son cargados luego en la vista con nuestro trabajo en las plantillas de jade. Lo que deberiamos hacer ahora es mover un poco mas alla esos datos que estan en los controladores a nuestro directorio de `models`.
+
+La ventaja de hacer esto que es solidifica los requerimientos de la estructura de datos de nuestra aplicacion. Esto refleja que la estructura de datso refleja las necesidades de nuestra aplicacion. Por lo que aca lo que haremos sera hablar de modelar los datos.
+
+# Mongoose y lo que hace.
+
+Mongoose permite manejar el modelo de datos de nuestra aplicacion dentro de nuestra aplicacion. Por lo que no es necesario trabajar sobre la base de datos. Definimos el modelo de datos desde nuestra aplicacion.
+
+Veamos algunas convenciones de nombre que usaremos por el momento:
+
+* en mongodb cada entrada es llamada `document`.
+* en mongodb una coleccion de documentos es llamado `collection`.
+* en mongoose la definicion de un documento es llamado `schema`.
+* cada entidad individual de datos definida en el `schema` es llamada `path`.
+
+Un modelo es una version compilada del `schema`. Todas las interacciones de datos usadas con mongoose pasan por el modelo.
+
+# Como funciona el modelo de datos de mongoose.
+
+Veremos primero un documento en mongo y luego un `schema` en mongoose:
+
+```javascript
+// Documento en mongo.
+{
+  "firstname": "Simon",
+  "surname": "Holmes",
+  _id : ObjectId("52279effc62ca8b0c1000007")
+}
+```
+
+```javascript
+// schema
+{
+  firstname: String,
+  surname: String
+}
+```
+
+Como podemos ver el schema hace referencia a los tipos de datos que estan dentro del documento. El schema en este caso refleja el nombre de cada ruta de datos y luego define el tipo de dato que va a contener.
+
+# Definiendo un schema simple con mongoose.
+
+Como sabemos un schema de mongoose es simplemente un objeto en js que definimos en nuestra aplicacion. Vamos a configurar este esquema.
+
+Vamos a definir el schema en nuestro directorio `models` al lado de nuestro archivo `db.js`. Creamos en la carpeta `models` el archivo `locations.js`. Requerimos luego mongoose pues lo necesitamos para definir el `schema`.
+
+```javascript
+var mongoose = require('mongoose');
+```
+
+Vamos a requerir el archivo en nuestro archivo `db.js`:
+
+```javascript
+require('./locations');
+```
+
+# Configuracion basica del schema.
+
+Con mongoose tenemos una funcion constructora que nos permiten definir nuevos `schemas` que tipicamente son asignados a variables.
+
+```javascript
+var locationSchema = new mongoose.Schema({});
+```
+
+El codigo lo añadimos a nuestro archivo `locations.js`.
+
+# Definiendo el schema para controlar los datos.
+
+El beneficio de mover los datos de la vista de los controladores hacia un schema es que nos permite visualizar de manera efectiva como queremos estructurar los datos con los que vamos a trabajar.
+
+Vamos a partir definiendo el schema del controlador `homelist`. Recordemos que el controlador encargado de esto pasa lo siguientes datos respecto a nuestra primera locacion:
+
+```javascript
+locations: [{
+  name: 'Starcups',
+  address: '125 High Street, Reading, RG6 1PS',
+  rating: 3,
+  facilities: ['Hot drinks', 'Food', 'Premiun wifi'],
+  distance: '100m'
+}]
+```
+
+Teniendo esto podemos ya definir nuestro `schema` basico:
+
+```javascript
+var locationSchema = new mongoose.Schema({
+  name: String,
+  address: String,
+  rating: Number,
+  facilities: [String],
+  distance: String
+});
+```
+
+# Asignando valores por defecto.
+
+En algunos caso es util asignar valores por defecto cuando nuestro documento mongo es creado basado en nuestro esquema. Cuando una locacion es añadida a nuestra db no tendra reseñas ni rating.
+
+Lo que podemos hacer es definir valores por defectos como el 0 para el caso de rating. En el caso de rating podemos definirlo asi en nuestro schema:
+
+```javascript
+var locationSchema = new mongoose.Schema({
+  name: String,
+  address: String,
+  rating: {type: Number, "default": 0},
+  facilities: [String],
+  distance: String
+});
+```
+
+# Añadiendo validacion: campos requeridos.
+
+Con mongoose podemos facilmente añadir campos de validación para el caso de nuestro schema. Esto ayuda a manejar la integridad de los datos y proteger nuestra db de problemas asociados como datos perdidos o datos malformados.
+
+Una forma de validar datos es asegurarnos de que los datos requeridos no esten vacios. Podemos hacer:
+
+```javascript
+name: {type: String, required: true}
+```
+
+Si luego intentamos guardar una locacion sin un nombre mongoose va a retornar un error de validacion que podemos capturar inmediatamente en nuestro codigo.
+
+# Añadiendo validacion: limites de numeros.
+
+La misma tecnica la podemos usar para definir valores maximos y minimos para ciertos campos de datos, como este caso el campo de rating, cuyo valor minimo sabemos que es 0 y su valor maximo es 5.
+
+```javascript
+rating: {type: Number, "default": 0, min:0, max: 5}
+```
+
+Con esto mongoose no nos dejara guardar valores de rating menores a 0 y mayores a 5.
+
+# Usando datos geograficos en Mongo con Mongoose.
+
+Mongo puede guardar datos geograficos com lat y long y puede manejar un index basados en estos datos. Esto permite a los usuarios hacer busquedas rapidas de lugares que estan cerca de otros o dadas ciertas coordenadas especificas.
+
+Los datos geograficos estan guardados de acuerdo al formato GeoJSON. Podemos usar mongoose para definir en el schema estos datos geoespaciales en la ruta de nuestro schema. Para esto debemos:
+
+* definir una ruta como un arreglo del tipo Number.
+* definir una ruta teniendo un indice `2dsphere`.
+
+```javascript
+var mongoose = require('mongoose');
+
+var locationSchema = new mongoose.Schema({
+  name: {type: String, required: true},
+  address: String,
+  rating: {type: Number, "default": 0, min: 0, max: 5},
+  facilities: [String],
+  coords: {type: [Number], index: '2dsphere'}
+});
+```
+
+El campo `2dsphere` es critico pues permite a mongo hacer las consultas sobre el indice.
