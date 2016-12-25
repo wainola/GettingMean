@@ -634,3 +634,33 @@ Con este paso creamos una coleccion nueva en `locations` y ademas añadimos nues
 # Añadiendo subdocumentos.
 
 Notamos que nuestro primer documento no tiene los datos completos, ya que aun no integramos los subdocumentos de reseñas. Podemos añadir esto con el comando inicial save, como lo hicimos cuando recien añadimos el primer documento.
+
+Mongo tiene un comando `update` que acepta dos argumentos. El primero es la consulta para saber que documento actualizar, y el segundo contiene las intrucciones de que hacer cuando encuentra el documento que queremos actualizar. En este momento podemos hacer una simple consulta al documento `Startcups` ya que sabemos que no hay duplicados. Para las instrucciones del objeto podemos usar el comando `$push` para añadir nuevos objetos en la ruta de las reseñas. No importa si la ruta no existe, mongo la añadira de todos modos.
+
+El codigo seria:
+
+```javascript
+db.locations.update({
+  name: 'Starcups'
+}, {
+  $push: {
+    reviews: {
+      author: 'Nicolas Riquelme',
+      id: ObjectId(),
+      rating: 5,
+      timestamp: new Date('Dic 24, 2016'),
+      reviewText: 'What a great place. I can\'t  say enough good things about it.'
+    }
+  }
+});
+```
+
+Si corremos este comando en la consola de mongo usando la db `Loc8r` añadira la reseña al documento.  Podemos repetir este comando todas las veces que quieras, cambiando los datos para añadir multiples reseñas.
+
+# Repitiendo el proceso.
+
+Estos comandos no han permitido poner añadir datos dentro de nuesta db. Ahora podemos añadir mas locaciones.
+
+Cuando terminemos con eso, estaremos listos para que nuestra aplicacion puedan comenzar a usar nuestra db, que en ese caso encaja muy bien con la construccion de una api. Antes que hagamos eso queremos actualizar nuestro repo en heroku.
+
+# Enviando la base a un ambiente en vivo.
