@@ -750,3 +750,15 @@ Tenemos nuestra db original de desarrollo en nuestra maquina local y una nueva d
 Por lo que tenemos un codigo base corriendo en dos ambientes, cada uno de los cuales usa una base de datos diferente. Para manejar eso debemos usar una variable de ambiente de Node llamada `NODE_ENV`.
 
 # El `NODE_ENV`.
+
+Las variables de ambiente afectan la manera en que los procesos del nucleo corren y vamos a ver como usarlo.
+
+Nuestra aplicacion ya usar el `NODE_ENV` pero simplemente no lo vemos siempre. Por defecto Heroku deberia configurar `NODE_ENV` a producion para que la aplicacion corra en modo de produccion en el servidor.
+
+# Asegurandose que Heroku use el modo de produccion.
+
+En algunas ocasiones Heroku quizas no este corriendo en modo de produccion. Para asegurarnos de que si estemos usando el ambiente de produccion, corremos el siguiente comando en la terminal:
+
+`heroku config:set NODE_ENV=production`
+
+# Configurando la URI de la db basada en el ambiente.
