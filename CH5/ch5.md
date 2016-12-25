@@ -698,8 +698,55 @@ Ahora podemos hacer el push de los datos. Los pasos son:
 
 # Creando el directorio temporal.
 
-Creamos entonces el directorio donde tendremos los datos de prueba: `makdir tmp/mongodump`.
+Creamos entonces el directorio donde tendremos los datos de prueba: `makdir -p ~/tmp/mongodump`. Con esto ya tenemos un lugar para nuestra data de prueba.
 
 # Enviando los datos desde la db de desarrollo.
 
-El proceso de enviar los datos es mas que todo una exportacion.
+El proceso de enviar los datos es mas que todo una exportacion. El comando que usaremos es `mongodump` que acepta los siguientes parametros:
+
+* `-h` el servidor huesped.
+* `-d` el nombre de la base de datos.
+* `-o` el directorio de salida.
+
+Usando todo esto junto al puerto por defecto de MongoDB que es `27017` terminamos con un comando como el siguiente:
+
+`mongodump -h localhost:27017 -d Loc8r -o ~/tmp/mongodump`
+
+Si corremos eso tenemos datos temporales.
+
+# Restaurando los datos a nuestra base de datos en vivo.
+
+El proceso de enviar datos a nuestra db es similar a lo que hicimos recien. Esta vez usamod el comando `mongorestore`. Este comando espera los siguientes parametros:
+
+* `-h` servidor y puerto en vivo.
+* `-d` nombre de la db en vivo.
+* `-u` nombre de usuario de la db en vivo.
+* `-p` contraseña para la db en vivo.
+
+Cuando juntamos todo esto usando la informacion que tenemos de la URI tenemos un comando como este:
+
+`mongorestore -h ds145188.mlab.com:45188 -d wainola_locations -u <dbUser> -p <dbPass> ~/tmp/mongodump/Loc8r`
+
+Cuando corramos este comando y se enviaremos la informacion desde los datos hasta los datos de prueba en nuestra base de datos en vivo.
+
+# Testeando las bases en vivo.
+
+El shell de mongo no esta restringido al acceso de las db, podemos usar la shell para conectarnos con db externas, si tenemos las credenciales correctas.
+
+Para conectar la shell de mongo con una base externa hacemos:
+
+`mongo hostname:port/database_name -u username -p password`
+
+Por ejemplo:
+
+`mongo ds145188.mlab.com:45188/wainola_locations -u <dbUser> -p <dbPass>`
+
+Ahora tenemos la db conectada de manera remota en nuestra shell de mongo.
+
+# Haciendo que la app use la db correcta.
+
+Tenemos nuestra db original de desarrollo en nuestra maquina local y una nueva db subida a MongoLab. Lo que queremos hacer es usar la db de desarrollo cuando estamos desarrollando nuestra aplicacion, y queremos usar la version en vivo de nuestra db cuando estemos usando nuestra app en vivo. Ambas usan el mismo codigo fuente.
+
+Por lo que tenemos un codigo base corriendo en dos ambientes, cada uno de los cuales usa una base de datos diferente. Para manejar eso debemos usar una variable de ambiente de Node llamada `NODE_ENV`.
+
+# El `NODE_ENV`.
