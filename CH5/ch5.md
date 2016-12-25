@@ -665,3 +665,41 @@ Estos comandos no han permitido poner añadir datos dentro de nuesta db. Ahora p
 Cuando terminemos con eso, estaremos listos para que nuestra aplicacion puedan comenzar a usar nuestra db, que en ese caso encaja muy bien con la construccion de una api. Antes que hagamos eso queremos actualizar nuestro repo en heroku.
 
 # Enviando la base a un ambiente en vivo.
+
+Las db necesitan estar externamente accesibles y no ser accesibles localmente. Vamos a ver como poner la db en un ambiente en vivo. Esto nos servira para que toda vez que actualicemos datos de nuestra app en la base de datos, esos datos se vean reflejados en las vistas con las que estamos trabajando.
+
+Utilizaremos un servicio llamado `mongoLab` que puede ser usado como un add-on de Heroku.
+
+# Configurando MongoLab.
+
+Nuestra primera meta es obtener un acceso externo a nuestra db a traves del URI, de manera tal que podamos enviar datos y añadirlas a nuestra app.
+
+El metodo que usamos para setear nuestra base de datos en un ambiente en vivo fue el de mongoLab. En este caso tenemos que primero hacernos una cuenta en mongoLab, generar un usuario y luego enviar este usuario en Heroku:
+
+`heroku config:set MONGOLAB_URI=mongodb://<dbUser>:<dbUserPass>@ds145188.mlab.com:45188/wainola_locations`
+
+Una vez configurado esto tenemos entonces la conexion establecida entre nuestro ambiente en vivo y nuestra base de datos.
+
+Al utilizar la URI que MongoLab nos provee tenemos:
+* el nombre de usuario de la base.
+* la clave.
+* la direccion del servidor.
+* el puerto.
+* el nombre de la base de datos.
+
+# Enviando datos.
+
+Ahora podemos hacer el push de los datos. Los pasos son:
+
+* crear un directorio temporal que tenga datos de prueba.
+* los datos de prueba de nuestro entorno de desarrollo de la base de Loc8r.
+* restaurar los datos en nuestro ambiente en vivo.
+* probar la base de datos viva.
+
+# Creando el directorio temporal.
+
+Creamos entonces el directorio donde tendremos los datos de prueba: `makdir tmp/mongodump`.
+
+# Enviando los datos desde la db de desarrollo.
+
+El proceso de enviar los datos es mas que todo una exportacion.
