@@ -632,3 +632,5 @@ db.locations.save({
 Con este paso creamos una coleccion nueva en `locations` y ademas añadimos nuestro primer documento en la coleccion. Luego en la misma terminal podemos hacer `show collections` y veremos nuestra coleccion creada y podemos hacer la consulta respectiva. En este caso consultamos haciendo `db.locations.find();` lo cual nos retornara todos los documentos que la coleccion tiene. El retorno de la informacion no tendra cambios de linea, por lo que si queremos que se nos retorne un formato mas amigable de lectura hacemos `db.locations.find().pretty();`
 
 # Añadiendo subdocumentos.
+
+Notamos que nuestro primer documento no tiene los datos completos, ya que aun no integramos los subdocumentos de reseñas. Podemos añadir esto con el comando inicial save, como lo hicimos cuando recien añadimos el primer documento.
