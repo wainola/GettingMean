@@ -712,7 +712,7 @@ Usando todo esto junto al puerto por defecto de MongoDB que es `27017` terminamo
 
 `mongodump -h localhost:27017 -d Loc8r -o ~/tmp/mongodump`
 
-Si corremos eso tenemos datos temporales.
+Con este comando lo que hacemos es que nuestra base de datos local la ponemos en el directorio que posteriormente vamos a exportar, haciendo la base que este en un ambiente en vivo. Luego solo tendremos que enviar los datos de nuestra base a nuestro entorno `live` sobre el cual estamos trabajando.
 
 # Restaurando los datos a nuestra base de datos en vivo.
 
