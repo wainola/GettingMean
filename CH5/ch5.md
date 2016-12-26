@@ -762,3 +762,33 @@ En algunas ocasiones Heroku quizas no este corriendo en modo de produccion. Para
 `heroku config:set NODE_ENV=production`
 
 # Configurando la URI de la db basada en el ambiente.
+
+La conexion con la base de datos para nuestra aplicacion esta sostenida por lo que programemos en nuestro archivo `db.js`. La conexion que se establece a traves de la URI de la base de datos es:
+
+```javascript
+var dbURI = 'mongodb://localhost/Loc8r';
+mongoose.connect(dbURI);
+```
+Cambiar el valor de la URI en el ambiente que estamos trabajando es relativamente sencillo: utilizamos un condicional para verificar que el `NODE_ENV`. Con el siguiente codigo hacemos una verificacion si es que el `NODE_ENV` esta seteado para produccion o no:
+
+```javascript
+var dbURI = 'mongodb://localhost/Loc8r';
+if(process.env.NODE_ENV === 'production'){
+  dbURI = 'mongodb://mongodb://nrriquel:Nrriquel1987@ds145188.mlab.com:45188/wainola_locations'
+}
+```
+Ahora podemos hacer las pruebas de la aplicacion y verificar que este todo funcionando de manera correcta.
+
+# Testeando en Heroku.
+
+Para testear que nuestra app este corriendo con nuestra base de datos en heroku debemos hacer primero los tipicos git push para actualizar el repo que estamos usando. Una vez hecho eso, pasamos a revisar los logs de heroku con el comando `heroku logs` en donde podremos ver los mensajes relativos a la conexion o no de nuestra base de datos con nuestra aplicacion. Si logramos visualizar el mensaje en el cual nos indica que la aplicacion ha sido conectada a traves de mongoose, entonces estamos bien encaminados y hemos podidos vincular nuestra app con una base de datos.
+
+# Recapitulación.
+
+* uso de mongoose para conectar nuestra aplicacion de express con nuestra db.
+* mejores practicas para manejar las conexiones con mongoose.
+* como modelar los datos usando los schemas en mongoose.
+* compilar los schemas en los modelos.
+* usar el shell de mongo para trabajar directamente con la db.
+* enviar los datos a una URI en vivo.
+* conectar diferentes bases de datos desde diferentes ambientes.
