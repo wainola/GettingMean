@@ -121,3 +121,17 @@ Lo primero que haremos sera crear un area separada dentro de nuestra aplicacion 
 En este directorio que creamos tendremos todos los archivos necesarios para crear nuestra API: rutas, controladores y modelos.
 
 # Creando las rutas.
+
+Tal como hicimos en nuestra aplicacion principal de Express tendremos un archivo `index.js` en nuestro directorio `app_api/routes` que tendra las ruta que utilizaremos en nuestra API.
+
+# Incluyendo las rutas en la aplicacion.
+
+Lo primero que haremos antes es referenciar este archivo en nuestro archivo de aplicacion principal llamado `app.js`.
+
+El primer paso en este caso es decirle a nuestra aplicacion que estamos añadiendo mas rutas para tener en cuenta, y cuando debemos usar esas rutas. Ya tenemos en nuestro archivo `app.js` el comando que hace el require del nuestro archivo de servidor, por lo que debemos simplemente imitar la sintaxis:
+
+```javascript
+
+var routes = require('./app_server/routes/index');
+var routesApi = require('./app_api/routes/index');
+```
