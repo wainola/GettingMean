@@ -111,3 +111,13 @@ Una buena API RESt deberia retonar los codigos de estatus de HTTP correctos. Los
 * 500: Error interno del servidor.
 
 # Configurando la API en express.
+
+Tenemos entones una idea de las acciones que debemos emprender para diseñar nuestra API REST. Con Express lo que haremos sera generar codigo sobre los controladores y las rutas para poder dar respuesta correcta a los elementos que pidamos en nuestra API.
+
+Dado que tenemos archivos para los controladores y las rutas podemos hacer uso de ellos. Otra opcion mejor es mantener el codigo de la API separado para no correr riesgos de confusion al crear nuestra API en primera instancia. Tambien al mantener el codigo de nuestra API separado lo que nos permite es tener una base de codigo que podamos usar en el futuro para otras APIS que creemos. Lo que queremos aca es un desacoplamiento sencillo de nuestra base de codigo.
+
+Lo primero que haremos sera crear un area separada dentro de nuestra aplicacion para los archivos que crearemos en nuestra API. En el nivel mas alto creamos un directorio llamado `app_api`. Este directorio estara al mismo nivel que nuestro directorio `app_server`.
+
+En este directorio que creamos tendremos todos los archivos necesarios para crear nuestra API: rutas, controladores y modelos.
+
+# Creando las rutas.
