@@ -244,5 +244,25 @@ module.exports.locationsCreate = function(req, res){
   res.json({"status": "success"});
 };
 ```
-
 Retornando un JSON y una respuesta de estado es una tarea bastante comun en las apis, por lo que es buena idea mover estas sentencias en sus propias funciones. Vamos a crear una funcion `sendJsonResponse` en ambos controladores y vamos a llamarlas a cada una desde los marcadores de posicion de los controladores:
+
+```javascript
+var sendJsonResponse = function(res, status, content){
+  res.status(status);
+  res.json(content);
+};
+
+module.exports.locationsCreate = function(req, res){
+  sendJsonResponse(res, 200, {"status": "success"});
+};
+```
+De este modo podemos enviar una respuesta JSON asociada con un codigo de estatus en una sola linea.
+
+# Incluyendo el modelo:
+
+Es de vital imortancia que la API pueda hablar con la base de datos. Para hacer eso usaremos Mongoose, pero primero necesitamos hacer el `require` de Mongoose en el archivo del controlador y luego e eso traer el modelo de locaciones a los controladores. De esta manera los controladores podran exhibir los datos de la vista.
+
+```javascript
+var mongoose = require('mongoose');
+var Loc = mongoose.model('Location');
+```
