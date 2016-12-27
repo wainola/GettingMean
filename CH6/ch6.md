@@ -227,4 +227,22 @@ Para probar el ruteo deberemos retornar una respuesta.
 
 # Retornando un JSON desde un request de Express.
 
-Cuando construimos una aplicacion en express renderizamos una vista de plantilla que envia HTML al navegador. Pero con una API lo que queremos es devolver un codigo de estatus y algun tipo de JSON en los datos. Express permite 
+Cuando construimos una aplicacion en express renderizamos una vista de plantilla que envia HTML al navegador. Pero con una API lo que queremos es devolver un codigo de estatus y algun tipo de JSON en los datos. Express permite hacer esto de manera bien sencilla:
+
+```javascript
+res.status(status);
+res.json(content);
+```
+
+El primer elemento de codigo lo que hace es enviar el codigo de status como respuesta. El segundo envia el contenido en formato json.
+
+Podemos usar estos dos comando en nuestro marcador de posicion de la funcion que creamos anteriormente para probar el tema de los envios de codigo de estatus del protocolo HTPP:
+
+```javascript
+module.exports.locationsCreate = function(req, res){
+  res.status(200);
+  res.json({"status": "success"});
+};
+```
+
+Retornando un JSON y una respuesta de estado es una tarea bastante comun en las apis, por lo que es buena idea mover estas sentencias en sus propias funciones. Vamos a crear una funcion `sendJsonResponse` en ambos controladores y vamos a llamarlas a cada una desde los marcadores de posicion de los controladores:
