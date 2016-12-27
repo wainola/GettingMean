@@ -131,7 +131,51 @@ Lo primero que haremos antes es referenciar este archivo en nuestro archivo de a
 El primer paso en este caso es decirle a nuestra aplicacion que estamos añadiendo mas rutas para tener en cuenta, y cuando debemos usar esas rutas. Ya tenemos en nuestro archivo `app.js` el comando que hace el require del nuestro archivo de servidor, por lo que debemos simplemente imitar la sintaxis:
 
 ```javascript
-
 var routes = require('./app_server/routes/index');
 var routesApi = require('./app_api/routes/index');
 ```
+
+Luego necesitamos decirle a la aplicacion cuando usar las ruta. Actualmente tenemos la siguiente linea de codigo diciendole a nuestra app que use las rutas del directorio `routes` de `app_server`:
+
+```javascript
+app.use('/', routes);
+```
+Notar el primero parametro `'/'`. Esto nos permite a nosotros especificar un conjunto de URL's para las cuales las rutas aplicaran. Por ejemplo si definimos que nuestra API comience con la ruta `'/api/'`, por lo que al añadir esa ruta y llamar a nuestra variable `routesApi` tendremos la ruta seteada para la llamada a la API.
+
+```javascript
+app.use('/', routes);
+app.use('/api', routesApi);
+```
+
+# Especificando los metodos request en las rutas.
+
+Hasta el momento solo hemos usado el metodo `GET` en las rutas, como en el siguiente codigo:
+
+```javascript
+router.get('/location', ctrlLocations.locationInfo);
+```
+
+Usando los otros metodos es bastante sencillo como cambiar del `router.get()` al `router.post()` por ejemplo. El siguiente codigo lo que hace es ejemplificar un metodo `POST` para crear una nueva locacion:
+
+```javascript
+router.post('/locations', ctrlLocations.locationInfo);
+```
+Notamos que no especificamos la ruta `/api`. Esta fue especificada en el archivo `app.js`, por lo que estas rutas solo deberian ser usadas si parten con `/api`, por lo que se asumen que todas las rutas especificadas tendran el prefijo `/api`.
+
+# Especificando los parametro de URL requeridos.
+
+Es bien comun para las url de APIS tener parametros que identifiquen documentos especifimos o subdocumentos. Especificando estos parametros en las rutas es bastante sencillo: tenemos que usar el prefijo del nombre del parametro cuando definimos cada ruta.
+
+Por ejemplo: digamos que estamos tratando de acceder a la reseña que tiene el ID `abc` que pertenence a la locacion que tiene el ID `123`; tenemos una ruta de URL que es asi:
+
+`/api/locations/123/reviews/abc`
+
+Cambiando los ID's por nombres de parametros nos da una ruta como la siguiente:
+
+`/api/locations/:locationid/reviews/:reviewid`
+
+Con una ruta como esa Express solo hara match de las URL's que concuerden con se parametro. Por lo que un ID de locaciones debe estar entre `/locations` y `/reviews` y un ID de reseña tiene que ser especificado al final de la URL.
+
+Cuando una ruta como esta es asignada a un controlador, el parametro estara disponible para ser usado en el codigo, con los nombres especificados en la ruta, `locationid` y `reviewid` en este caso.
+
+# Definiendo las rutas de Loc8r en la API.
