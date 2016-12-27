@@ -213,3 +213,18 @@ Notamos que la aproximacion que tomamos es una buena practica. Al definir las ru
 Nuestra aplicacion tiene ahora dos archivos que rutean. El archivo de rutas normal que nuestra aplicacion Express ordinaria, y el archivo de rutas de nuestra API.
 
 # Creando los controladores.
+
+Para permitir que la aplicacion inicie, podemos crear marcadores de posicion para las funciones de los controladores. Estas funciones no haran nada en realidad, pero evitaran que la aplicacion se caiga cuando estemos construyendo la funcionalidad de nuestra API. En definitiva, cuando estemos construyendo nuestra API lo que podemos hacer es generar algunas funciones que eviten que nuestra app se caiga.
+
+El primer paso es crear un archivo de controlador. Sabemos donde estos archivos deberian ir y como deberiamos llamarlos pues tenemos el mismo esquema en el directorio `app_server`. Necesitamos en este caso dos archivos `locations.js` y `reviews.js` en nuestro directorio `app_api/controllers`.
+
+Podemos crear un marcador de posicion para cada funcion del controlador como una funcion exportadora en blanco como vemos a continuacion:
+
+```javascript
+module.exports.locationsCreate = function (req, res) {};
+```
+Para probar el ruteo deberemos retornar una respuesta.
+
+# Retornando un JSON desde un request de Express.
+
+Cuando construimos una aplicacion en express renderizamos una vista de plantilla que envia HTML al navegador. Pero con una API lo que queremos es devolver un codigo de estatus y algun tipo de JSON en los datos. Express permite 
