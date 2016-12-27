@@ -179,3 +179,37 @@ Con una ruta como esa Express solo hara match de las URL's que concuerden con se
 Cuando una ruta como esta es asignada a un controlador, el parametro estara disponible para ser usado en el codigo, con los nombres especificados en la ruta, `locationid` y `reviewid` en este caso.
 
 # Definiendo las rutas de Loc8r en la API.
+
+El archivo del directorio routes quedara asi:
+
+```javascript
+var express = require('express');
+var router = express.Router();
+// Los siguientes archivos a incluir aun no se crean.
+var ctrlLocations = require('../controllers/locations');
+var ctrlReviews = require('../controllers/reviews');
+
+// Locations.
+
+router.get('/locations', ctrlLocations.locationsListByDistance);
+router.post('/locations', ctrlLocations.locationsCreate);
+router.get('/locations/:locationid', ctrlLocations.locationsReadOne);
+router.put('/locations/:locationid', ctrlLocations.locationsUpdateOne);
+router.delete('/locations/:locationid', ctrlLocations.locationsDeleteOne);
+
+// reviews
+router.post('/locations/:locationid/reviews', ctrlReviews.reviewsCreate);
+router.get('/locations/:locationid/reviews/:reviewid', ctrlReviews.reviewsReadOne);
+router.put('/locations/:locationid/reviews/:reviewid', ctrlReviews.reviewsUpdateOne);
+router.delete('/locations/:locationid/reviews/:reviewid', ctrlReviews.reviewsDeleteOne);
+
+module.exports = router;
+```
+
+Este es el archivo router que necesitamos requerir en nuestro archivo controlador. Aun no creamos el archivo controlador y lo haremos pronto.
+
+Notamos que la aproximacion que tomamos es una buena practica. Al definir las rutas inmediatamente y las funciones, lo que hacemos es desarrollar inmediatamente una vision global de que es lo que lo que debe ir en el archivo controlador.
+
+Nuestra aplicacion tiene ahora dos archivos que rutean. El archivo de rutas normal que nuestra aplicacion Express ordinaria, y el archivo de rutas de nuestra API.
+
+# Creando los controladores.
