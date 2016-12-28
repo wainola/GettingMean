@@ -277,8 +277,45 @@ Ahora necesitamos decirle a nuestra aplicacion que movimos el directorio a `app_
 require('./app_api/models/db');
 ```
 
+# Nota respecto a problemas con la llamada a la API.
+
+Siguiendo el tutorial de libro no podremos llegar a probar la llamada a la API por una razon muy simple: `nodemon` nos dara error puesto que la referencia a la url que estamos haciendo no se relaciona con el controlador que hemos programado. Los pasos explicativos son los siguientes:
+
+1. llamamos a la siguiente url: `http://localhost:3000/api/locations/1111`.
+2. en razon de la llamada a esa url deberiamos recibir una respuesta tanto en la consola como en el navegador. En el navegador recibimos un json con el mensaje `success`. En la consola recibimos el codigo de estatus de `http`.
+3. al hacer el requerimiendo de la url se activa el codigo de nuestro archivo en el directorio `app_api/routes`, pasando primero por nuestro archivo principal `app.js`. Tenemos que en este archivo:
+
+```javascript
+app.use('/api', routesApi);
+```
+Por lo que cualquier URL que se ingrese con el prefijo `/api` invoca inmediatamente a la variable `routesApi` que esta haciendo referencia la modulo `index.js` que esta en el directorio que ya hemos citado.
+
+4. hecho el requerimiento el modulo se activa. Se declaran dos variables asociadas al modulo de los controladores. Estas dos variables seran las encargadas en etapas mas avanzadas de enviarnos las respuestas de codigos de estatus y objetos que tenemos en nuestra base de datos.
+
+5. Activado el modulo `index.js` nos encontramos que la variable router que esta haciendo referencia al metodo de express `Router` va a hacer un metodo `GET` de la URL que ingresamos. Este metodo `GET` tiene una url espefica que esta asociada con el id de la locacion que estamos pidiendo. En este caso el id de la locacion es `111`. Dado este id se gatilla una llamada a la variable `ctrlLocations` al metodo `locationsReadOne`.
+5. gatillada esta llamada al metodo tenemos que en el archivo de los controladores el modulo exportado `locationsReadOne` es el encargado de enviar el estatus en la terminal y el contenido en formato json de la respuesta a traves de la funcion `sendJsonResponse`:
+
+```javascript
+var sendJsonResponse = function(res, status, content){
+  res.status(status);
+  res.json(content);
+};
+```
+Donde res es la respuesta, status es el status ingresado previamente como argumento de la funcion, en este caso `200` y el contenido de esta respuesta es el objeto json que enviamos, que es parseado como tal en el navegador a traves del metodo `res.json(content)`.
+
+Si hacemos estos pasos previos no deberiamos tener problemas. El codigo que estaba dando problemas en este caso era el referido al tipo de metodo que estabamos invocando en la url que solo trabajaba con el `locationid`, por lo que en ese caso el unico metodo que el enrutador podia llamar era el `locationsReadOne`.
+
+Una vez corregido estos errores en nuestro codigo debemos hacer dos cosas mas:
+
+1. activar mongo a traves del comando `mongod`.
+2. activar nodemon.
+
+Y con eso estamos listos para enviar la url y probar nuestra api.
+
 # Testando la API.
 
-Podemos testear nuestra de manera bien rapida indicando las url y viendo si obtenemos una respuesta.
+Podemos usar una aplicacion que nos permite hacer pruebas de nuestras APIS. Esta app se llama Postman, que puede ser usada tanto en el navegador como aplicacion de escritorio.
 
-# Nota respecto a problemas con la llamada a la API.
+# Metodos GET: leyendo datos de la db.
+
+Los metodos `GET` 
