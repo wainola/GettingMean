@@ -318,4 +318,74 @@ Podemos usar una aplicacion que nos permite hacer pruebas de nuestras APIS. Esta
 
 # Metodos GET: leyendo datos de la db.
 
-Los metodos `GET` 
+Los metodos `GET` versan siempre de hacer consultas a las bases de datos y retornar datos en razon de esas consultas. En nuestro enrutador tenemos tres metodos `GET` ejecutando diferentes acciones.
+
+Lo que haremos sera ver como buscar locaciones, ya que esto provee una buena introduccion a la manera en que mongoose funciona. Luego lo que haremos sera localizar un solo documento usando una ID y expandiremos nuestra busqueda a diferentes documentos.
+
+# Encontrando un solo documento en MongoDB usando Mongoose.
+
+Mongoose lo que hace es interactuar con la db a traves del modelo, razon por la cual lo importamos como `Loc` al comienzo del archivo de controlador. Un modelo de mongoose tiene bastantes metodos asociados para ayudarnos a poder interactuar con la db.
+
+Para buscar un solo documento en nuestra db con un ID conocido en MongoDB mongoose tiene el metodod `findById`.
+
+Los metodos de consulta de mongoose son:
+
+* `find`.
+* `findById`.
+* `findOne`: obtiene el primer documento que calza con la consulta.
+* `geoNear`: encuentra lugares geograficos cercanos a la latitud y longitud provista.
+* `geoSearch`.
+
+# Aplicando el metodo `findById` al modelo.
+
+El metodo `findById` es muy sencillo de implementar. Acepta un solo parametro que en este caso es el ID a buscar. Es aplicado sobre el modelo de la siguiente manera:
+
+`Loc.findById(locationid)`
+
+Ojo: esto no iniciara la consulta sobre la base de datos. Solo le dira al modelo que tipo de consulta sera. Para comenzar una consulta sobre la db los modelos de mongoose deben tener un `exec` metodo.
+
+# Corriendo la consulta con el metodo `exec`.
+
+El metodo `exec` ejecuta la consulta y pasa el callback que se ejecutara cuando la operacion este completada. La funcion callback deberia aceptar dos parametros, un objeto `error` y una instancia del objeto consultado. El metodo es encadenado de la siguiente manera:
+
+```javascript
+Loc
+  .findById(locationid)
+  .exec(function(err, location){
+    console.log('findById complete')
+  });
+```
+
+Esta aproximacion nos asegura que la interacion con la db es asincronica, de manera tal que no bloquee los procesos en Node.
+
+# Usando el metodo `findById` en un controlador.
+
+El controlador en el cual vamos a trabajar para buscar la locacion por id es `locations.js` en el directorio de la api.
+
+Sabemos cual es el constructor basico para aplicar la operacion: aplicar el metodo en si, encadenado al metodo `exec` en el modelo. Para hacer que esto funcione de manera correcta en el contexto del controlador, necesitamos hacer dos cosas:
+
+* obtener el `locationid` como parametro desde la ur y pasarselo a `findById`.
+* proveer una salida al metodo `exec`.
+
+Con express nuevamente podemos hacer esto bien sencillo. Podemos obtener los parametros de las urls que hemos ya definido en nuestro archivo routes. El parametro de las urls estan un objeto `params` adjuntado al objeto `request`. Dado que nuestra ruta es definida como:
+
+```javascript
+app.get('/api/locations/:locationid', ctrlLocations.locationsReadOne);
+```
+Podemos acceder al parametro de `locationid` desde el controlador de la siguiente manera:
+
+`req.params.locationid`
+
+Para el caso de la salida de datos, es decir del mensaje que buscamos imprimir, podemos usar la funcion `sendJsonResponse` que hemos definido anteriormente. En codigo seria:
+
+```javascript
+module.exports.locationsReadOne = function(req, res){
+  Loc
+    .findById(req.params.locationid)
+    .exec(function(err, location){
+      sendJsonResponse(res, 200, location);
+    });
+};
+```
+
+Con esto tenemos ahora un controlador muy basico de la API. Podemos probar el resultado obteniendo algunos de los ID de las locaciones en mongo y yendo a la url en nuestro navegador o llamando a `postman`. Para obtener algunos de los ids corremos el comando `.fin()` en la shell de mongo y nos listara todas las locaciones que tenemos guardadas y los ids respectivos. 
