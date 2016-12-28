@@ -258,7 +258,7 @@ module.exports.locationsCreate = function(req, res){
 ```
 De este modo podemos enviar una respuesta JSON asociada con un codigo de estatus en una sola linea.
 
-# Incluyendo el modelo:
+# Incluyendo el modelo.
 
 Es de vital imortancia que la API pueda hablar con la base de datos. Para hacer eso usaremos Mongoose, pero primero necesitamos hacer el `require` de Mongoose en el archivo del controlador y luego e eso traer el modelo de locaciones a los controladores. De esta manera los controladores podran exhibir los datos de la vista.
 
@@ -266,3 +266,19 @@ Es de vital imortancia que la API pueda hablar con la base de datos. Para hacer 
 var mongoose = require('mongoose');
 var Loc = mongoose.model('Location');
 ```
+
+La primera linea requiere obviamente mongoose para poder trabajar con nuestra DB. La segunda linea lo que hace es traer el modelo de nuestra db para que podamos interactuar con la coleccion de `locations`.
+
+Si vemos a nuestra estructura de directorios de nuestra aplicacion tenemos que nuestro directorio `app_api` tenemos el directorio que contiene el modelo de nuestra db. En la carpeta `models` tenemos el schema de nuestra db y la conexion con la db. Pero es la API la que esta lidiando con la db, no Express. Si las aplicacones fueran separadas, el modelo seria parte de la API por lo que ahi es donde el modelo debe permanecer.
+
+Ahora necesitamos decirle a nuestra aplicacion que movimos el directorio a `app_api/models` por lo que hacemos la actualizacion de nuestro codigo en el archivo `app.js`.
+
+```javascript
+require('./app_api/models/db');
+```
+
+# Testando la API.
+
+Podemos testear nuestra de manera bien rapida indicando las url y viendo si obtenemos una respuesta.
+
+# Nota respecto a problemas con la llamada a la API.
