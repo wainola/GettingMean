@@ -388,4 +388,12 @@ module.exports.locationsReadOne = function(req, res){
 };
 ```
 
-Con esto tenemos ahora un controlador muy basico de la API. Podemos probar el resultado obteniendo algunos de los ID de las locaciones en mongo y yendo a la url en nuestro navegador o llamando a `postman`. Para obtener algunos de los ids corremos el comando `.fin()` en la shell de mongo y nos listara todas las locaciones que tenemos guardadas y los ids respectivos. 
+Con esto tenemos ahora un controlador muy basico de la API. Podemos probar el resultado obteniendo algunos de los ID de las locaciones en mongo y yendo a la url en nuestro navegador o llamando a `postman`. Para obtener algunos de los ids corremos el comando `.find()` en la shell de mongo y nos listara todas las locaciones que tenemos guardadas y los ids respectivos.
+
+Si enviamos ahora una consulta por ejemplo no valida a la url, por ejemplo `http://localhost:3000/api/locations/1234` no nos aparecera nada, y en la terminal veremos un codigo de estado 200. En cambio si enviamos el id de una de nuestros documentos en la db como por ejemplo `http://localhost:3000/api/locations/585f2e96f071d4cf08151894` nos retornara el documento consultado.
+
+# Atrapando errores.
+
+El problema con un controlador basico es que solo manda de salida cuando la respuesta es exitosa, independiente de que lo haya sido o no. Es decir, si enviamos un id errado, en la consola vemos la respuesta 200 que es ok. Y si enviamos el id correcto tenemos tambien la respuesta del documento de la db correspondiente a ese id. Lo que tenemos que hacer es responder a requerimientos erroneos.
+
+Para responder a estos requerimientos erroneos, el controlador necesita ser configurado para atrapar estos mensajes erroneos.
