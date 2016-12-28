@@ -396,4 +396,64 @@ Si enviamos ahora una consulta por ejemplo no valida a la url, por ejemplo `http
 
 El problema con un controlador basico es que solo manda de salida cuando la respuesta es exitosa, independiente de que lo haya sido o no. Es decir, si enviamos un id errado, en la consola vemos la respuesta 200 que es ok. Y si enviamos el id correcto tenemos tambien la respuesta del documento de la db correspondiente a ese id. Lo que tenemos que hacer es responder a requerimientos erroneos.
 
-Para responder a estos requerimientos erroneos, el controlador necesita ser configurado para atrapar estos mensajes erroneos.
+Para responder a estos requerimientos erroneos, el controlador necesita ser configurado para atrapar estos mensajes erroneos. En este caso podemos usar condicionales para atrapar los errores en el ingreso de las urls.
+
+Con nuestro controlador basico tenemos tres errores que debemos atrapar:
+
+* si el request no incluye el id de la locacion.
+* si `findById` no retorna una locacion.
+* si `findById` retorna un error.
+
+El codigo de estatus para un requerimiento `GET` no satisfactorio es `404`.
+
+```javascript
+module.exports.locationsReadOne = function(req, res){
+  if(req.params && req.params.locationid){
+    Loc
+      .findById(req.params.locationid)
+      .exec(function(err, location){
+        if(!location){
+          sendJsonResponse(res, 404, {"message": "locationid not found"});
+          return;
+        }else if (err){
+          sendJsonResponse(res, 404, err);
+        }
+        sendJsonResponse(res, 200, location);
+      });
+  }else{
+    sendJsonResponse(res, 404, {"message": "No locationid in request"});
+  }
+};
+```
+
+Este es el codigo final de nuestro controlador.
+
+Lo que primero verificamos es que el objeto `params` exista dentro del objeto `request` y que ese objeto contenga algun valor para `locationid`. El condicional es cerrado en el caso de que ni el objeto `params` ni el id de la locacion sea encontrado, aunque este mensaje no se vera impreso.
+
+Notar que si las condiciones antes mencionadas se cumplen pero no estan dentro de nuestra db, se envian los respectivos mensajes de error. Estas verificaciones terminan con un return, lo que hacer que la ejecucion de la funcion finalice.
+
+# Encontrando un subdocumento basado en si ID.
+
+Para buscar un subdocumento necesitamos primero cargar exitosamente la busqueda del documento por su id. Esto significa que debemos tomar el controlador `locationsReadOne` como punto de partida y añadir algunas modificaciones para crear el controlador `reviewsReadOne`. Este controlador:
+
+* utiliza como parametro adicional la url de la reseña.
+* selecciona solo el nombre y la reseña desde el documento, en vez de que mongodb retorne todo el subdocumento.
+* buscar por una reseña que calce con el id que hemos pasado.
+* retorna la respuesta apropiada en forma de json.
+
+# Limitando las rutas retornadas desde mongodb.
+
+Cuando uno obtiene un documento desde Mongo no necesita todo el documento obtenido, sino que las partes que hagan mas sentido. Limitar los datos que estamos pasando es mas sano en terminos de consumo de recursos de red.
+
+Podemos hacer esto con mongoose a traves del metodo `select` encadenado a la consulta al modelo. Por ejemplo:
+
+```javascript
+Loc
+  .findById(req.params.locationid)
+  .select('name reviews')
+  .exec();
+```
+
+El metodo select acepta una cadena de espacio separado de las rutas que queremos obtener.
+
+# Usando mongoose para encontrar un subdocumento especifico.
