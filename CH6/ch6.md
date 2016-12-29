@@ -457,3 +457,20 @@ Loc
 El metodo select acepta una cadena de espacio separado de las rutas que queremos obtener.
 
 # Usando mongoose para encontrar un subdocumento especifico.
+
+Mongoose tambien ofrece un metodo helper para encontrar un subdocumento dado un id. Dado un arreglo de subdocumentos, Mongoose tiene un metodo de `id` que acepta el id que queremos encontrar. El metodo de `id` retornara el subdocumento que calce con la consulta:
+
+```javascript
+Loc
+  .findById(req.params.locationid)
+  .select('name reviews')
+  .exec(
+    function(err, locacion){
+      var review;
+      review = location.reviews.id(req.params.reviewid);
+    }
+  );
+```
+Con este codigo la reseña deberia ser retornada en el callback.
+
+# Añadiendo errores y poniendo todo el codigo junto.
