@@ -591,3 +591,180 @@ module.exports.reviewsReadOne = function(req, res){
 # Observaciones.
 
 Notamos que en la DB hemos declarado muchos campos de reseña con el id `id`. Los correcto seria actualizar estos valores, pues para que la API pueda enviar los valores de las reseñas el valor de id debe ser siempre `_id`.
+
+# Buscando multiples documentos con consultas geoespaciales.
+
+ La pagina principal de Loc8r deberia desplegar una lista de locaciones basadas en la localizacion geografica actual de la persona. MongoDB y Mongoose tienen consultas especiales para poder hacer busquedas basadas en estos parametros.
+
+ El metodo de mongoose `geoNear` permite encontrar una lista de locaciones cercanas a un punto especificado, hasta un rango de distancia especificado maximo. `geoNear` es un metodo de modelo que acepta tres parametros:
+
+ * a geoJSON punto geografico.
+ * un objeto de opcion.
+ * una funcion callback.
+
+ El constructo basico es:
+
+ `Loc.geoNear(point, options, callback);`
+
+ A diferencia del metodo `findById`, el metodo `geoNear` no tiene un metodo exec. En ves de eso el metodo es ejecutado inmediatamente una ve que el callback es completado.
+
+# Construyndo el punto geoJSON.
+
+El primer parametro de `geoNear` es un punto `geoJSON`. Este punto es un simple objeto JSON que contienen la lat y long en un arreglo. El constructo es como sigue:
+
+```javascript
+var point = {
+  type: "Point",
+  coordinates: [lng, lat]
+}
+```
+La ruta url para obtener una lista de locaciones no tienen las coordenadas en la url como parametros, por lo que se tendra que especificar de una manera distinta. Una consulta por un string es ideal para este tipo de datos, significando que la url requerida se vera mas o menos asi:
+
+`api/locations?lng=-0.7992599&lat=51.378091`
+
+Express permite tener acceso a los valores en una consulta de cadenas, poniendolos en un objeto `query` adjunto al objeto `request`. Por ejemplo tendriamos algo como `req.query.lng`. La long y lat seran en este caso strings recibidos, pero necesitan ser añadidos al punto como numeros. Podemos usar el metodo `parseFloat` para ejercer una coercion de tipo entre el string a numero. Cuando ponemos todo esto junto tenemos:
+
+```javascript
+module.exports.locationsByDistance = function(req, res){
+  var lng = parseFloat(req.query.lng);
+  var lat = parseFloat(req.query.lat);
+  var point = {
+    type: "Point",
+    coordinates: [lng, lat]
+  };
+  Loc.geoNear(point, options, callback);
+};
+```
+
+Naturalmente este controlador no funcionara aun puesto que los parametros `options` y `callback` estan actualmente indefinidos.
+
+# Añadiendo las opciones de consulta al geoNear.
+
+El metodo `geoNear` tiene solo una opcion requerida: `spherical`. Esto determina si la busqueda debe ser basada en un objeto esferico o plano. Dado que es aceptable pensar que la tierra es redonda usaremos la opcion `spherical`.
+
+Para crear el objeto hacemos lo siguiente:
+
+```javascript
+var geoOptions = {
+  spherical: true
+};
+```
+Con esto la busqueda quedara basada en coordenadas de una esfera.
+
+# Limitando los resultados de geoNear por numero.
+
+Cuando hacemos requerimientos a las APIs queremos limitar el numero de respuestas que recibimos cuando retornamos la lista. En el metodo `geoNear` añadir la opcion `num` permite hacer esto:
+
+```javascript
+var geoOptions = {
+  spherical: true,
+  num: 10
+};
+```
+
+Luego de esto la busqueda solo enviara las proximas 10 locaciones mas cercanas.
+
+# Limitando los resultados por distancia.
+
+Cuando devolvemos resultados geograficos otra manera de limitar los resultados es estableciendo una distancia maxima sobre la cual se establece un diametro de lejania. En este caso lo que hacemos es añadir simplemente un `maxDistance` para efectos de determinar cual sera la distancia maxima sobre la cual vamos a exponer los resultados.
+
+Con el siguiente snippet de codigo establecemos el limite de distancia de los resultados dado una distancia maxima.
+
+```javascript
+var theEarth = (function(){
+  var earthRadius = 6371;
+  var getDistanceFromRads = function(rads){
+    return parseFloat(rads * earthRadius);
+  };
+  var getRadsFromDistance = function(distance){
+    return parseFloat(distance / earthRadius);
+  };
+  return{
+    getDistanceFromRads: getDistanceFromRads,
+    getRadsFromDistance: getRadsFromDistance
+  };
+})();
+```
+Con esto tenemos una funcion reusable para poder hacer nuestros calculos de distancia.
+
+Ahora podemos añadir el valor de `maxDistance` a las opciones y añadir estas opciones al controlador:
+
+```javascript
+module.exports.locationsListByDistance = function(req, res){
+  var lng = parseFloat(req.query.lng);
+  var lat = parseFloat(req.query.lat);
+  var point = {
+    type: "Point",
+    coordinates: [lng, lat]
+  };
+
+  var geoOptions = {
+    spherical: true,
+    maxDistance: theEarth.getRadsFromDistance(20),
+    num: 10
+  };
+  Loc.geoNear(point, geoOptions, callback);
+};
+```
+
+# Viendo el resultado de geoNear.
+
+El callback completo para el metodo geoNear tiene los siguientes tres parametros:
+
+* un objeto error.
+* un objeto resultados.
+* un objeto stats.
+
+Dada una consula satisfactoria un objeto error estara como `undefined`, el objeto resultados sera un arreglo de resultados, y el objeto stats contendra informacion acerca de la consulta. Vamos a primero trabajar con la consulta exitosa, y luego añadiremos el error.
+
+Seguida de la consulta `geoNear`, mongo retorna una arreglo de objetos. Cada objeto contiene una distancia y un documento retornado desde la db. En otras palabras, mongo no añade la distancia. El siguiente codigo muestra el ejemplo de lo que retorna mongo:
+
+```javascript
+[{
+  dis: 0.002532674663406363,
+  obj: {
+    name: 'Starcups',
+    addres: '125 High Street, Reading, RG6 1PS'
+  }
+}]
+```
+Notamos que este arreglo solo tiene un objeto. Una consulta exitosa probablemente tendra mas de un objeto. La consulta `geoNear` lo que hace de de hecho es devolver todo el documento dentro del objeto `obj`.
+
+Evidenciamos tres problemas aca:
+* La API no deberia retornar mas datos de los necesarios.
+* queremos retornar la distancia en un valor que sea legible.
+
+# Procesando los datos de geoNear.
+
+Tenemos que en el controlador de nuestra pagina, particularmente el controlador `locations.js` tenemos lo siguiente:
+
+```javascript
+{
+  name: 'Starcups',
+  address: '125 High Street, Reading, RG6 1PS',
+  rating: 3,
+  facilities: ['Hot drinks', 'Food', 'Premium wifi'],
+  distance: '100m'
+}
+```
+
+Para crear un objeto en base a estas lineas, lo que tenemos que hacer es iterar sobre el resultado y hacer un push a un nuevo arreglo. Estos datos procesados pueden ser luego retornados con una respuesta de estado del tipo 200.
+
+```javascript
+Loc.geoNear(point, options, function(err, results, stats){
+  var locations = [];
+  results.forEach(function(doc){
+    locations.push({
+      distance: theEarth.getDistanceFromRads(doc.dis),
+      name: doc.obj.name,
+      address: dob.obj.address,
+      rating: doc.obj.rating,
+      facilities: doc.obj.facilities,
+      _id: doc.obj._id
+    });
+  });
+  sendJsonResponse(res, 200, locations);
+});
+```
+
+Añadimos todo ese codigo a nuestro controlador `locations.js` en el directorio de la API. Ahora lo que podemos hacer es probar enviando lat y lng para ver los resultados. Si la distancia es muy lejana el arreglo retornano sera vacio.
