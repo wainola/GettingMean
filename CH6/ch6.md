@@ -474,3 +474,120 @@ Loc
 Con este codigo la reseña deberia ser retornada en el callback.
 
 # Añadiendo errores y poniendo todo el codigo junto.
+
+El codigo final de nuestro controlador reviews queda como sigue:
+
+```javascript
+module.exports.reviewsReadOne = function(req, res){
+  if(req.params && req.params.locationid && req.params.reviewid){
+    Loc
+      .findById(req.params.locationid)
+      .select('name reviews')
+      .exec(
+        function(err, location){
+          var response, review;
+          if(!location){
+            sendJsonResponse(res, 404, {
+              "message": "locationid not found"
+            });
+            return;
+          }else if (err){
+            sendJsonResponse(res, 400, err);
+            return;
+          }
+          if(location.reviews && location.reviews.length > 0){
+            review = location.reviews.id(req.params.reviewid);
+            if(!review){
+              sendJsonResponse(res, 404, {
+                "message": "review not found"
+              });
+            }else{
+              response = {
+                location: {
+                  name: location.name,
+                  id: req.params.locationid
+                },
+                review: review
+              };
+              sendJsonResponse(res, 200, response);
+            }
+          }else{
+            sendJsonResponse(res, 404, {
+              "message": "No reviews found"
+            });
+          }
+        }
+      );
+  }else{
+    sendJsonResponse(res, 404, {
+      "message": "Not found, locationid and reviewid are both required"
+    });
+  }
+};
+```
+Notemos que el codigo de mas arriba va hacia nuestro controlador `reviews.js`, pues lo que estamos pidiendo el la lectura de las reseñas, por lo que estamos llamando a los metodos `router.get()` referidos a las reseñas.
+
+El codigo del controlador de las reseñas es el siguiente:
+
+```javascript
+var mongoose = require('mongoose');
+var Loc = mongoose.model('Location');
+
+var sendJsonResponse = function(res, status, content) {
+  res.status(status);
+  res.json(content);
+};
+
+module.exports.reviewsReadOne = function(req, res){
+  console.log('Getting single review');
+  if(req.params && req.params.locationid && req.params.reviewid){
+    Loc
+      .findById(req.params.locationid)
+      .select('name reviews')
+      .exec(
+        function(err, location){
+          console.log(location);
+          var response, review;
+          if(!location){
+            sendJsonResponse(res, 404, {
+              "message": "locationid not found"
+            });
+            return;
+          } else if (err){
+            sendJsonResponse(res, 400, err);
+            return;
+          }
+          if(location.reviews && location.reviews.length > 0){
+            review = location.reviews.id(req.params.reviewid);
+            if(!review){
+              sendJsonResponse(res, 404, {
+                "message": "review not found"
+              });
+            } else {
+              response = {
+                location: {
+                  name: location.name,
+                  id: req.params.locationid
+                },
+                review: review
+              };
+              sendJsonResponse(res, 200, response);
+            }
+          } else {
+            sendJsonResponse(res, 404, {
+              "message": "No reviews found"
+            });
+          }
+        }
+      );
+  }else{
+    sendJsonResponse(res, 404, {
+      "message": "Not found, locationid and reviewid are both required"
+    });
+  }
+};
+```
+
+# Observaciones.
+
+Notamos que en la DB hemos declarado muchos campos de reseña con el id `id`. Los correcto seria actualizar estos valores, pues para que la API pueda enviar los valores de las reseñas el valor de id debe ser siempre `_id`.
