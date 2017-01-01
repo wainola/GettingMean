@@ -836,3 +836,58 @@ En la base de datos Loc8r cada locacion es un documento, por lo que eso es lo qu
 `Loc.create(dataToSave, callback)`
 
 Existen dos pasos relevantes para el proceso de creacion en la db:
+
+* tomar los datos porteados y crear un objeto js que coincida con el schema.
+* enviar la repuesta apropiada en el callback dependiendo del exito o el fracaso de la operacion `create`.
+
+Dado el paso 1 sabemos que podemos obtener datos que se nos envian a nosotros a traves del `req.body` y dado el paso 2, este paso deberia ser bastante familiar dado los otros controladores que hemos creado.
+
+```javascript
+module.exports.locationsCreate = function(req, res){
+  Loc.create({
+    name: req.body.name,
+    address: req.body.address,
+    facilities: req.body.facilities.split(","),
+    coords: [parseFloat(req.body.lng), parseFloat(req.body.lat)],
+    openingTimes: [{
+      days: req.body.days1,
+      opening: req.body.opening1,
+      closing: req.body.closing1,
+      closed: req.body.closed1,
+    }, {
+      days: req.body.days2,
+      opening: req.body.opening2,
+      closing: req.body.closing2,
+      closed: req.body.closed2,
+    }]
+  }, function(err, location){
+    if (err){
+      sendJsonResponse(res, 400, err);
+    } else {
+      sendJsonResponse(res, 201, location);
+    }
+  });
+};
+```
+
+Lo anterior exhibe lo facil que es crear un nuevo documento en mongo y guardar algunos datos.
+
+Notamos que tambien no hay ningun campo para `rating`. Recordar que el schema de mongoose habiamos configurado rating de la siguiente manera:
+
+`rating: {type: Number, "default": 0, min:0, max:5}`
+
+# Validando los datos usando mongoose.
+
+Notamos que no hemos introducido ninguna forma de validacion, por lo que es posible que puedan ingresar datos vacios. Recordemos el schema que hemos definido en el modelo:
+
+```javascript
+var locationSchema = new mongoose.Schema({
+  name: {type: String, required: true},
+  address: String,
+  rating: {type: Number, "default": 0, min: 0, max: 5},   facilities: [String],
+  coords: {type: [Number], index: '2dsphere', required: true},  openingTimes: [openingTimeSchema],
+  reviews: [reviewSchema]
+});
+```
+
+Existen metodos que estan requeridos y que si se colocan vacios se va a generar un error.
