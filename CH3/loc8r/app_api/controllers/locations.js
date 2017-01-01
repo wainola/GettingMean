@@ -24,6 +24,20 @@ module.exports.locationsReadOne = function(req, res){
   }
 };
 
+var theEarth = (function(){
+  var earthRadius = 6371;
+  var getDistanceFromRads = function(rads){
+    return parseFloat(rads * earthRadius);
+  };
+  var getRadsFromDistance = function(distance){
+    return parseFloat(distance / earthRadius);
+  };
+  return{
+    getDistanceFromRads: getDistanceFromRads,
+    getRadsFromDistance: getRadsFromDistance
+  };
+})();
+
 module.exports.locationsListByDistance = function(req, res){
   var lng = parseFloat(req.query.lng);
   var lat = parseFloat(req.query.lat);
@@ -31,13 +45,18 @@ module.exports.locationsListByDistance = function(req, res){
     type: "Point",
     coordinates: [lng, lat]
   };
-
   var geoOptions = {
     spherical: true,
     maxDistance: theEarth.getRadsFromDistance(20),
     num: 10
   };
-  Loc.geoNear(point, options, function(err, results, stats){
+  if(!lng || !lat){
+    sendJsonResponse(res, 404, {
+      "message": "lng and lat query parameters are required"
+    });
+    return;
+  }
+  Loc.geoNear(point, geoOptions, function(err, results, stats){
     var locations = [];
     results.forEach(function(doc){
       locations.push({

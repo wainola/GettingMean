@@ -768,3 +768,65 @@ Loc.geoNear(point, options, function(err, results, stats){
 ```
 
 Añadimos todo ese codigo a nuestro controlador `locations.js` en el directorio de la API. Ahora lo que podemos hacer es probar enviando lat y lng para ver los resultados. Si la distancia es muy lejana el arreglo retornano sera vacio.
+
+# Añadiendo los errores.
+
+Añadimos un breve snippet para manejar el tema de los errores. En este caso el error es que no nos envien los datos de lng y lat requeridos.
+
+```javascript
+if(!lng || !lat){
+  sendJsonResponse(res, 404, {
+    "message": "lng and lat query parameters are required"
+  });
+  return;
+}
+```
+
+El codigo del controlador completo es:
+
+```javascript
+module.exports.locationsListByDistance = function(req, res){
+  var lng = parseFloat(req.query.lng);
+  var lat = parseFloat(req.query.lat);
+  var point = {
+    type: "Point",
+    coordinates: [lng, lat]
+  };
+  var geoOptions = {
+    spherical: true,
+    maxDistance: theEarth.getRadsFromDistance(20),
+    num: 10
+  };
+  if(!lng || !lat){
+    sendJsonResponse(res, 404, {
+      "message": "lng and lat query parameters are required"
+    });
+    return;
+  }
+  Loc.geoNear(point, geoOptions, function(err, results, stats){
+    var locations = [];
+    results.forEach(function(doc){
+      locations.push({
+        distance: theEarth.getDistanceFromRads(doc.dis),
+        name: doc.obj.name,
+        address: dob.obj.address,
+        rating: doc.obj.rating,
+        facilities: doc.obj.facilities,
+        _id: doc.obj._id
+      });
+    });
+    sendJsonResponse(res, 200, locations);
+  });
+};
+```
+Enviando las lng y lat de nuestra ubicacion nos retorna un areglo vacio.
+
+# Metodos POST: añadiendo datos a Mongo.
+
+Los metodos POST versan sobre crear documentos o subdocumentos en la base de datos, y luego retornalos como datos guardados a manera de confirmacion.
+
+En este caso nuestros metodos POST haran lo siguiente: `crear una nueva locacion` y `crear una nueva reseña`.
+
+Los metodos POST trabajan añadiendo los datos posteados a la db. De la misma manera en que los parametros URL son accesados con las consultas de string realizadas sobre `req.params` y accesadas via `re.query`, los controladores en Express acceden a los datos posteados a traves de `req.body`.
+
+# Creando nuevos documentos en Mongo.
