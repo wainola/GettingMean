@@ -891,3 +891,49 @@ var locationSchema = new mongoose.Schema({
 ```
 
 Existen metodos que estan requeridos y que si se colocan vacios se va a generar un error.
+
+# Creando nuevos subdocumentos.
+
+En el contexto de nuestra pagina las reseñas corresponden a subdocumentos de nuestra db. Los subdocumentos son creados y guardados en funcion de sus elementos parientes, en este caso la locacion sobre el cual se le esta haciendo la reseña. Para crear subdocumentos con nuestra API tenemos que:
+
+* encontrar el elemento pariente correcto.
+* añadir un nuevo subdocumento.
+* guardar sobre el documento que es pariente.
+
+Para eso tenemos que trabajar sobre los controladores de las reseñas, fundamentalmente debemos crear el controlador asociado a la creacion de una nueva reseña:
+
+```javascript
+module.exports.reviewsCreate = function(req, res){
+  var locationid = req.params.locationid;
+  if(locationid){
+    Loc
+      .findById(locationid)
+      .select('reviews')
+      .exec(
+        function(err, location){
+          if(err){
+            sendJsonResponse(res, 400, err);
+          } else {
+            doAddReview(req, res, location);
+          }
+        }
+      );
+  } else {
+    sendJsonResponse(res, 404, {
+      "message" : "Not found, locationid required"
+    });
+  }
+};
+```
+Notamos que hacemos una llamada a la funcion `doAddReview` que nos permite formatear la reseña que estamos agregando.
+
+# Añadiendo y guardando un subdocumento.
+
+Una vez que encontramos el documento pariente y obtenido los otros subdocumentos, podemos añadir uno nuevo. Los subdocumentos son esencialmente arreglos de objetos, y la manera mas sencilla de añadir nuevos datos es crear un objeto de datos y usar el metodo push de js:
+
+```javascript
+location.reviews.push({
+  author: req.body.author,
+  rating: req.body.rating,
+  reviewText: req.body.reviewText
+});
