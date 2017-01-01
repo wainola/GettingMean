@@ -830,3 +830,9 @@ En este caso nuestros metodos POST haran lo siguiente: `crear una nueva locacion
 Los metodos POST trabajan añadiendo los datos posteados a la db. De la misma manera en que los parametros URL son accesados con las consultas de string realizadas sobre `req.params` y accesadas via `re.query`, los controladores en Express acceden a los datos posteados a traves de `req.body`.
 
 # Creando nuevos documentos en Mongo.
+
+En la base de datos Loc8r cada locacion es un documento, por lo que eso es lo que estaremos creando en esta seccion. Con mongoose la creacion de documentos es un ejercicio muy sencillo. Se toma el modelo que ya tenemos definido, y aplicamos el metodo `create` y enviamos algunos datos a la funcion callback. Este es el constructo minimo adjuntado al modelo Loc.
+
+`Loc.create(dataToSave, callback)`
+
+Existen dos pasos relevantes para el proceso de creacion en la db:
