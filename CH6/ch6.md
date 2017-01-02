@@ -937,3 +937,53 @@ location.reviews.push({
   rating: req.body.rating,
   reviewText: req.body.reviewText
 });
+```
+
+Esto esta siendo posteado desde los datos, y por ende es la razon por la cual usamos el `req.body` como parametro.
+
+Una vez que el subdocumento es añadido, debe ser guardado, ya que los subdocumentos no pueden ser guardados por si mismos. Para guardar un documento en en mongoose, el modelo tiene un metodo `save` que espera un callback con un parametro de error y un objeto retornado.
+
+```javascript
+location.save(function(err, location){
+  var thisReview;
+  if(err){
+    sendJsonResponse(res, 400, err);
+  } else{
+    thisReview = location.reviews[location.reviews.length-1];
+    sendJsonResponse(res, 201, thisReview);
+  }
+});
+```
+
+El documento retornado por el metodo `save` es un documento completo y no solo el subdocumento.
+
+Cuando se añaden documentos y subdocumentos lo que debemos tener en cuenta es como esto tiene un impacto en otros datos. En Loc8r añadir una nueva reseña añade un nuevo rating. Este nuevo rating va a impactar el rating promedio del lugar. Por lo que para guardar de manera exitosa, debemos tambien tomar en cuenta que debemos añadir una funcion que permita actualizar el rating de la locacion.
+
+El codigo final es como sigue:
+
+```javascript
+var doAddReview = function(req, res, location){
+  if(!location){
+    sendJsonResponse(res, 404, {
+      "message": "locationid not found"
+    });
+  } else {
+    location.reviews.push({
+      author: req.body.author,
+      rating: req.body.rating,
+      reviewText: req.body.reviewText
+    });
+    location.save(function(err, location){
+      var thisReview;
+      if(err){
+        sendJsonResponse(res, 400, err);
+      } else{
+        thisReview = location.reviews[location.reviews.length-1];
+        sendJsonResponse(res, 201, thisReview);
+      }
+    });
+  }
+};
+```
+
+# Actualizando el rating promedio.
