@@ -1248,4 +1248,4 @@ El proceso de borrar subdocumentos no es distinto de borrar documentos, ya que t
 * guardar el documento pariente.
 * confirmar que la operacion ha sido exitosa.
 
-Con mongoose tenemos otro metodo relativamente sencillo para poder borrar subdocumentos: En este caso sabemos que podemos encontrar un 
+Con mongoose tenemos otro metodo relativamente sencillo para poder borrar subdocumentos. En este caso sabemos que podemos encontrar un subdocumento haciendo:
