@@ -1048,3 +1048,154 @@ Los metodos PUT dicen relacion con la actualizacion de documentos o subdocumento
 Los metodos PUT son similares a los metodos POST, porque funcionand tomando los datos y posteandolos. Pero en vez de usar los datos para crear nuevos documentos en la DB, los metodos PUT actualizan los datos de documentos ya existentes.
 
 # Usando Mongoose para actualizar documentos en MongoDB.
+
+En nuestra aplicacion Loc8r queremos actualizar la locacion para añadir nuevos lugares, cambiar los tiempos de apertura o actualizar algunos de los campos de datos que ya hemos definido. Para esto tenemos que seguir los siguientes pasos:
+
+* encontrar el documento relevante a actualizar.
+* hacer algunos cambios a esa instancia.
+* guardar el documento.
+* enviar una respuesta JSON.
+
+Esta aproximacion se hace posible por la manera en que Mongoose modela y mapea las instancias directamente en el documento Mongo. Cuando una consulta es encontrada en el documento, mongoose lo que hace es recibir una instancia de modelo. Si se realizan cambios en la instancia, entonces se guardan estos y mongoose lo que hara es actualizar el documento original en la db.
+
+# Usando el metodo save de mongoose.
+
+Nuevamente podemos usar el metodo save para actualizar la instancia que estamis buscando. El codigo seria como sigue:
+
+```javascript
+Loc
+  .findById(req.params.locationid)
+  .exec(
+    function(err, location){
+      location.name = req.body.name;
+      location.save(function(err, location){
+        if(err){
+          sendJsonResponse(res, 404, err);
+        } else {
+          sendJsonResponse(res, 200, location);
+        }
+      });
+    };
+  );
+```
+
+Aqui podemos ver los pasos por separados entre buscar, actualizar, guardar y responder. Utilizando el esquema de mas arriba, podemos entonces insertar eso en el controlador `locationsUpdateOne`:
+
+```javascript
+module.exports.locationsUpdateOne = function(req, res){
+  if(!req.params.locationid){
+    sendJsonResponse(res, 404, {
+      "message": "not found, locationid is required."
+    });
+    return;
+  }
+  Loc
+    .findById(req.params.locationid)
+    .select('-reviews -rating')
+    .exec(
+      function(err, location){
+        if(!location){
+          sendJsonResponse(res, 404, {
+            "message": "locationid not found"
+          });
+          return;
+        } else if (err){
+          sendJsonResponse(res, 400, err);
+          return;
+        }
+        location.name = req.body.name;
+        location.address = req.body.address;
+        location.facilities = req.body.facilities.split(",");
+        location.coords = [parseFloat(req.body.lng), parseFloat(req.body.lat)];
+        location.openingTimes = [{
+          days: req.body.days1,
+          opening: req.body.opening1,
+          closing: req.body.closing1,
+          closed: req.body.closed1,
+        }, {
+          days: req.body.days2,
+          opening: req.body.opening2,
+          closing: req.body.closing2,
+          closed: req.body.closed2,
+        }];
+        location.save(function(err, location){
+          if(err){
+            sendJsonResponse(res, 404, err);
+          } else {
+            sendJsonResponse(res, 200, location);
+          }
+        });
+      }
+    ):
+};
+```
+Aca hay harto codigo que puede ser identificado dentro de los pasos de ejecucion. Sin embargo uno destacad sobre otro:
+
+`.select('-reviews -rating')`
+
+Previamente lo que hemos hecho ha sido usar el metodo `select` para indicar que columnas queremos realmente seleccionar. Al añadir el guion al frente de la ruta lo que estamos indicando es que no queremos obtener todos los datos de la db. Es decir lo que esta indicando este metodo es que queremos obtener todos los campos de la db excepto `reviews` y `rating`.
+
+# Actualizando subdocumentos existentes en mongo.
+
+Actualizar un subdocumento es exactamente lo mismo que actualizar un documento, con una sola excepcion. Una vez que hemos encontrado el documento, debemos encargarnos **ademas** de encontar el subdocumento correcto para llevar a cabo los cambios que queremos hacer. Por lo que los pasos son:
+
+* encontrar el documento relevante.
+* encontrar el subdocumento relevante.
+* realizar algunos cambios en el subdocumento.
+* guardar el documento.
+* enviar una respuesta JSON.
+
+Para el caso de la actualizacion de los subdocumentos, los elementos que estamos actualizando son las reseñas. Por lo que un cambio en las reseñas tambien implicara un cambio en el rating promedio.
+
+Todo lo anterior se lo añadimos a nuestro controlador `reviewsUpdateOne` en el archivo `review.js`:
+
+```javascript
+module.exports.reviewsUpdateOne = function(req, res){
+  if(!req.params.locationid || req.params.reviewid){
+    sendJsonResponse(res, 404, {
+      "message": "Not found, locationid and reviewid are both required"
+    });
+    return;
+  }
+  Loc
+    .findById(req.params.locationid)
+    .select('reviews')
+    .exec(
+      function(err, location){
+        var thisReview;
+        if(!location){
+          sendJsonResponse(res, 404, {
+            "message": "locationid not found"
+          });
+          return;
+        } else if(err){
+          sendJsonResponse(res, 400, err);
+          return;
+        }
+        if (location.reviews && location.reviews.length > 0){
+          if(!thisReview){
+            sendJsonResponse(res, 404, {
+              "message": "reviewid not found"
+            });
+          } else {
+            thisReview.author = req.body.author;
+            thisReview.rating = req.body.rating;
+            thisReview.reviewText = req.body.reviewTex;
+            location.save(function(err, location){
+              if(err){
+                sendJsonResponse(res, 404, err);
+              } else {
+                updateAverageRating(location._id);
+                sendJsonResponse(res, 200, thisReview);
+              }
+            });
+          }
+        } else {
+          sendJsonResponse(res, 404, {
+            "message": "No review to update"
+          });
+        }
+      }
+    );
+};
+```
