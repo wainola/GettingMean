@@ -1249,3 +1249,34 @@ El proceso de borrar subdocumentos no es distinto de borrar documentos, ya que t
 * confirmar que la operacion ha sido exitosa.
 
 Con mongoose tenemos otro metodo relativamente sencillo para poder borrar subdocumentos. En este caso sabemos que podemos encontrar un subdocumento haciendo:
+
+`location.reviews.id(reviewid).remove()`
+
+Este comando lo que hara sera borrar el subdocumento utilizando el metodo encadenado de `remove()`, lo cual a su vez removera el subdocumento de arreglo. El codigo para buscar un remover un subdocumento es como sigue:
+
+```javascript
+module.exports.reviewsDeleteOne = function(req, res){
+  if(!req.params.locationid || !req.params.reviewid){
+    sendJsonResponse(res, 404, {
+      "message": "Not found, locationid and reviewid are both required"
+    });
+    return;
+  }
+  Loc
+    .findById(req.params.locationid)
+    .select('reviews')
+    .exec(
+      function(err, location){
+        if(!location){
+          sendJsonResponse(res, 404, {
+            "message": "locationid not found"
+          });
+          return;
+        } else if (err){
+          sendJsonResponse(res, 400, err);
+          return;
+        }
+        if
+      }
+    )
+}
