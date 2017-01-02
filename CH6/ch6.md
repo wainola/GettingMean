@@ -987,3 +987,64 @@ var doAddReview = function(req, res, location){
 ```
 
 # Actualizando el rating promedio.
+
+Calcular el rating promedio no es particularmente complicado. Lo que tenemos que hacer es:
+
+* encontrar el documento correcto dado el id provisto.
+* iterar sobre los documentos de reseña para sumar los valores de rating.
+* calcular el valor promedio.
+* actualizar el valor del rating del documento pariente.
+* guardar el documento.
+
+Notamos que todo este codigo debe ser puesto en el controlador `reviews.js`.
+
+El codigo del calculo de las reseñas promedios es:
+
+```javascript
+var updateAverageRating = function(locationid){
+  Loc
+    .findById(locationid)
+    .select('rating reviews')
+    .exec(
+      function(err, location){
+        if (!err){
+          doSetAverageRating(location);
+        }
+      });
+};
+
+var doSetAverageRating = function(location){
+  var i, reviewCount, ratingAverage, ratingTotal;
+  if(location.reviews && location.reviews.length > 0){
+    reviewCount = location.reviews.length;
+    ratingTotal = 0;
+    for(i = 0; i < reviewCount; i++){
+      ratingTotal = ratingTotal + location.reviews[i].rating;
+    }
+    ratingAverage = parseInt(ratingTotal / reviewCount, 10);
+    location.rating = ratingAverage;
+    location.save(function(err){
+      if(err){
+        console.log(err);
+      } else {
+        console.log("Average rating updated to", ratingAverage);
+      }
+    });
+  }
+};
+```
+
+Notamos aca que no estamos enviando una respuesta JSON. Esto es porque la respuesta JSON ya la enviamos. La operacion completa aca es asincronica.
+
+Añadir una reseña no es el unico momento en que queremos actualizar el rating. Por lo que cobra sentido hacer que estas funciones sean accesibles desde otro controlador y que no esten encadenadas en la accion misma de crear una reseña, cuestion que se lleva a cabo en el controlador que permite la creacion de reseñas.
+
+# Metodos PUYt: actualizando la base de datos en MongoDB.
+
+Los metodos PUT dicen relacion con la actualizacion de documentos o subdocumentos ya existentes en nuestra db. En este caso lo buscamos implementar respecto al controlador `locations.js` es:
+
+* actualizar una locacion en particular.
+* actualizar una reseña en particular.
+
+Los metodos PUT son similares a los metodos POST, porque funcionand tomando los datos y posteandolos. Pero en vez de usar los datos para crear nuevos documentos en la DB, los metodos PUT actualizan los datos de documentos ya existentes.
+
+# Usando Mongoose para actualizar documentos en MongoDB.
