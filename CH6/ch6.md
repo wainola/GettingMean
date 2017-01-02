@@ -1199,3 +1199,43 @@ module.exports.reviewsUpdateOne = function(req, res){
     );
 };
 ```
+Notar que mucho del codigo de mas arriba asi como en otras instancias de controladores es simplemente verificar que detectemos errores y que de ser asi, esos errores impidan actualizar los datos de la API.
+
+# Metodo DELETE. Borrando datos desde mongo.
+
+El metodo DELETE es simplemente sobre borrar datos. Para nuestra API esto cabe en lo siguiente:
+
+* borrar una locacion particular.
+* borrar una reseña en especifica.
+
+# Borrando documentos en mongoDB.
+
+Nuevamente mongoose hace que borrar documentos en mongo sea extremadamente sencillo. Mongoose tiene un metodo llamado `findByIdAndRemove` que nos permite hacer una consulta y sobre esa consulta ejecutar el borrado. El metodo en este caso solo espera un solo parametro, que es el id del documento.
+
+La API deberia responder con un 404 en el caso de un error y con un 204 en el caso de exito.
+
+```javascript
+module.exports.locationsDeleteOne = function(req, res){
+  var locationid = req.params.locationid;
+  if(locationid){
+    Loc
+      .findByIdAndRemove(locationid)
+      .exec(
+        function(err, location){
+          if(err){
+            sendJsonResponse(res, 404, err);
+            return;
+          }
+          sendJsonResponse(res, 204, null);
+        }
+      );
+  } else {
+    sendJsonResponse(res, 404, {
+      "message": "No locationid"
+    });
+  }
+};
+```
+El codigo de mas arriba es la manera mas rapida y efectiva de borrar un documento.
+
+# Borrando subdocumentos.
