@@ -1239,3 +1239,13 @@ module.exports.locationsDeleteOne = function(req, res){
 El codigo de mas arriba es la manera mas rapida y efectiva de borrar un documento.
 
 # Borrando subdocumentos.
+
+El proceso de borrar subdocumentos no es distinto de borrar documentos, ya que todo es manejado a traves de los documentos parientes. En este caso los pasos para poder borrar un subdocumentos son:
+
+* encontrar el documento pariente.
+* encontrar el subdocumento relevante o subdocumento a borrar.
+* remover el subdocumento.
+* guardar el documento pariente.
+* confirmar que la operacion ha sido exitosa.
+
+Con mongoose tenemos otro metodo relativamente sencillo para poder borrar subdocumentos: En este caso sabemos que podemos encontrar un 
