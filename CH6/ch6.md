@@ -1276,7 +1276,33 @@ module.exports.reviewsDeleteOne = function(req, res){
           sendJsonResponse(res, 400, err);
           return;
         }
-        if
+        if(location.reviews && location.reviews.length > 0){
+          if(!location.reviews.id(req.params.reviewid)){
+            sendJsonResponse(res, 404, {
+              "message": "reviewid not found"
+            });
+          } else{
+            location.reviews.id(req.params.reviewid).remove();
+            location.save(function(err){
+              if(err){
+                sendJsonResponse(res, 404, err);
+              } else {
+                updateAverageRating(location._id);
+                sendJsonResponse(res, 204, null);
+              }
+            });
+          }
+        } else {
+          sendJsonResponse(res, 404, {
+            "message": "No review to delete"
+          });
+        }
       }
-    )
-}
+    );
+};
+```
+Nuevamente mucho del codigo de aca es simplemente captura de errores. De las siete posibles respuestas, solo una da una respuesta satisfactoria, el resto versa solamente de las posibles llamadas erroneas que pueden ejecutarse al intentar borrar un elemento en la api.
+
+Dado que estamos borrando una reseña es comprensible querer hacer la actualizacion del rating promedio, esto porque al borrar una reseña estamos tambien borrando el rating que el usuario ingreso.
+
+Con este metodo tenemos entonces todos los metodos concernientens a nuestra API REST que hemos creado. Notar que en general la carga de las acciones que nuestra API ejecuta al comunicarse con la db es llevada a cabo en los controladores. En este caso hemos definido dos tipos de controladores. Los controladores relativos a las locaciones, que corresponden al esquema general de los documentos que estamos subiendo y los controladores asociados a las reseñas, que nuevamente corresponden a subdocumentos con los cuales estamos trabajando.
