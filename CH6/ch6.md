@@ -1306,3 +1306,14 @@ Nuevamente mucho del codigo de aca es simplemente captura de errores. De las sie
 Dado que estamos borrando una reseña es comprensible querer hacer la actualizacion del rating promedio, esto porque al borrar una reseña estamos tambien borrando el rating que el usuario ingreso.
 
 Con este metodo tenemos entonces todos los metodos concernientens a nuestra API REST que hemos creado. Notar que en general la carga de las acciones que nuestra API ejecuta al comunicarse con la db es llevada a cabo en los controladores. En este caso hemos definido dos tipos de controladores. Los controladores relativos a las locaciones, que corresponden al esquema general de los documentos que estamos subiendo y los controladores asociados a las reseñas, que nuevamente corresponden a subdocumentos con los cuales estamos trabajando.
+
+# Resumen.
+
+En este capitulo vimos:
+
+* las mejores practicas para crear una API REST.
+* incluir todos los metodos referidos a los requerimientos HTTP e insertados en las operaciones basicas CRUD.
+* utilizacion de los metodos helper de mongoose.
+* interactuar con el modelo a traves de mongoose.
+* manejar subdocumentos a traves de sus documentos parientes.
+* crear una API robusta a traves de los chequeos de errores.
