@@ -75,3 +75,101 @@ Aca hay varios elementos que vale la pena analizar de manera sucinta:
 Notamos que esta es una aproximacion rudimentaria pero efectiva. En nuestros controladores almacenamos la informacion de nuestro sitio y a traves de motor de plantilla  cargamos esa informacion para ser desplegada **dinamicamente** en funcion de las rutas que le pedimos a la pagina en el navegador.
 
 El objeto de estas notas es reforzar los conocimientos obtenidos en la construccion de la API. La API REST que diseñamos tendra la misma informacion almacenada en los controladores, pero la cargara a traves de llamadas a la base de datos. Por lo que en nuestro esquema de aplicacion, aca comenzamos a trabajar directamente con la base de datos y con mongoose, que permite hacer el modelado y los esquemas de nuestra base.
+
+# Express + MongoDB a traves de Mongoose.
+
+La conexion entre la DB y Express puede hacerse directamente, no obstante Mongo no ofrece buenas caracteristicas para mantener la db y la integridad de la estructura de datos. O al menos no de manera amigable.
+
+Mongoose ofrece varias ventajas para definir la estructura de datos y el modelo de la db. Mongoose es un intermediario entre nuestra db en Mongo y nuestra app en Express.
+
+Para añadir mongoose a nuestra aplicacion, podemos hacer un `npm install --save mongoose` y esto añadira no solo el modulo, sino que tambien añadira la dependencia a nuestro `package.json`.
+
+## Nueva estructura de directorios y configuracion del archivo de conexion.
+
+Dado que comenzaremos a programar nuestra API, la estructura de directorios cambia. Tenemos que es como sigue:
+
+```
+Loc8r
+|
+|_app_api
+  |_controllers
+  |_models
+  |_routes
+|_app_server
+  |_controllers
+  |_routes
+  |_views
+|_bin
+|_node_modules
+|_public
+  |_bootstrap
+  |_images
+  |_javascripts
+  |_stylesheets
+|_.gitignore
+|_app.js
+|_package.json
+|_Procfile
+```
+
+* en el directorio `controllers` almacenamos los controladores encargados de lidiar con los metodos HTTP referidos a la API. En ese directorio tendremos dos archivos, `locations.js` y `reviews.js`. Esto obedece a que nuestra aplicacion opera sobre dos estructuras de datos que deben ser tratadas de manera diferente. La primera son las locaciones, que constituyen los documentos principales en nuestra db. La segunda son las reseñas que estan adjuntas a las locaciones y que por ende son tratadas como subdocumentos. Si nuestra aplicacion fuera de otra indole es altamente probable que el tratamiento de los datos seria similar.
+* el directorio models contiene dos archivos: `db.js` y `locations.js`. El archivo `db.js` controla los eventos de conexion o desconexion a nuestra db. El archivo `locations.js` es donde definimos el esquema general de los documentos de nuestra db.
+* en el directorio `routes` definimos el archivo `index.js` que es el encargado de direccionar las peticiones de rutas a nuestra api y entregar las respuestas exhibidas a traves de los controladores.
+
+
+Para conectar con la db y manejar los estados de las conexiones en nuestro archivo usamos entonces lo siguiente:
+
+```javascript
+var mongoose = require('mongoose');
+```
+Luego debemos ir a nuestro archivo `app.js` en donde debemos hacer el requerimiento de nuestro archivo `db.js`:
+
+```javascript
+// Fragmento del archivo app.js
+
+var express = require('express');
+var path = require('path');
+var favicon = require('serve-favicon');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+// requerimos el archivo que maneja las conexiones con la db.
+require('./app_api/models/db');
+
+```
+
+Notamos que no asignamos el requerimiento a ninguna variable. Esto es porque en nuestro archivo `db.js` no vamos a exportar ninguna funcion.
+
+## Creacion de la conexion.
+
+Inicialmente la conexion a la db la vamos a hacer de manera local. Para generar una conexion con la db debemos declarar una URI, que es un unificador de recursos uniformes, que constituye una cadena de caracteres que identifica los recursos de una red unica. La URI nos servira para conectar mongoose a nuestra DB a traves del metodo `conect`.
+
+Las URI's de las db's siguen el siguiente constructo:
+
+```
+mogodb://username:password@localhost:27027/database
+```
+
+Los parametros username y password son en este caso opcionales. Notamos que al final del constructo de la URI va el nombre de nuestra db. En nuestro archivo `db.js` hacemos:
+
+```javascript
+var mongoose = require('mongoose');
+var dbURI = 'mongodb://localhost/Loc8r'
+mongoose.connect(dbURI); // establecemos la conexion de manera exitosa.
+```
+
+Para hacer la verificacion debemos generar eventos de conexion que nos indiquen que estamos conectados a la db. Antes que eso debemos activar la db usando el comando `mongod` y luego verificar que tenemos la base lista para trabajar.
+
+Notar que para crear una base de datos en la terminal de mongo hacemos:
+
+`use Name_DB` donde Name_DB puede ser cualquier nombre de base de datos. Esto crea la db pero no aparece listada si hacemos `show dbs`. Una vez que ingresemos datos, podremos ver la nueva db lista para ser usada.
+
+## Monitoreo de conexiones con eventos de mongoose.
+
+En nuestro archivo `db.js` nos preocuparemos de manejar las conexiones a la db que se realicen en los distintos entornos sobre los cuales estamos trabajando. Para eso usaremos los eventos con el metodo `connection` y el evento `on`. Tres son los mensajes que debemos asegurarnos de remitir:
+
+* conectado.
+* error.
+* desconectado.
+
+Los constructos usando el metodo de mongoose es:
