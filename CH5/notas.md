@@ -239,3 +239,60 @@ process.on('SIGTERM', function(){
 });
 ```
 Este codigo es reusable en el caso de que estemos implementando un flujo de trabajo que incluya nodemon para la visualizacion de cambios de nuestra app, el deployado en heroku etc.
+
+## Notas sobre los procesos capturados.
+
+**SIGUSR2**: es una interrupcion de señal dada por alguna aplicacion determinada por el usaurio. Node ocupa el `SIGUSR1` y nodemon en este caso ocupa el `SIGUSR2`.
+**SIGINT**: terminacion de la señal por el teclado. Normalmente involucra las teclas CTRL+C.
+**SIGTERM**: terminacion de la señal. En este caso obdece a la terminacion de la señal por parte de heroku.
+
+## Recapitulacion.
+
+Hasta el momento hemos definido la arquitectura basica del archivo `db.js` que es el que regula las conexiones entre `mongoose` y la base de datos.
+
+Se definio para el manejo de conexiones con la db una funcion que tiene la siguiente estructura:
+
+```javascript
+var nombreFuncion = function(mensaje, callback){
+  // se cierra la conexion con el metodo de mongoose close.
+  mongoose.connection.close(function(){
+    console.log('Desconexion de mongoose a traves de ' + mensaje);
+    callback();
+  });
+};
+```
+En esta aproximacion el callback hace referencia a la funcion que llamamos para hacer la terminacion de los procesos. En el caso del reinicio de `nodemon` la funcion callback llamada al metodo `process.kill(process.pid)`.
+
+Esta solucion es bastante estandar si estamos usando como flujo de trabajo nodemon y heroku.
+
+## Modeloamiento de los datos.
+
+La gracia de `mongoose` es que nos permite determinar a traves de codigo el esquema general de nuestra base de datos. La determinacion del esquema ayuda a establecer salvaguardas para la creacion de documentos en nuestra db. Todo esto es llevado a cabo en el directorio `models`.
+
+Cuando trabajamos con `mongodb` tenemos que:
+
+* cada entrada es un `document`.
+* una coleccion de entradas o `documents` es llamada una `collection`.
+* con mongoose la definicion de la estructura de un documento es llamada `schema`.
+* las entidades individuales de datos definidas en un `schema` es llamada una ruta o `path`.
+
+El `modelo` en este caso es la version compilada del `schema`. Todas las interaciones de datos pasan por el modelo.
+
+El mongo un documento se presenta de la siguiente manera en la shell:
+
+```javascript
+{
+  "nombre": "Nicolas",
+  "apellido": "Riquelme",
+  _id: ObjectId("2434364574534534534dfgfbvd")
+}
+```
+En mongoose este `schema` es definido de la siguiente manera:
+
+```javascript
+{
+  nombre: String,
+  apellido: String
+}
+```
+Dado que en este caso estamos trabajando con 
