@@ -116,7 +116,6 @@ Loc8r
 * el directorio models contiene dos archivos: `db.js` y `locations.js`. El archivo `db.js` controla los eventos de conexion o desconexion a nuestra db. El archivo `locations.js` es donde definimos el esquema general de los documentos de nuestra db.
 * en el directorio `routes` definimos el archivo `index.js` que es el encargado de direccionar las peticiones de rutas a nuestra api y entregar las respuestas exhibidas a traves de los controladores.
 
-
 Para conectar con la db y manejar los estados de las conexiones en nuestro archivo usamos entonces lo siguiente:
 
 ```javascript
@@ -126,7 +125,6 @@ Luego debemos ir a nuestro archivo `app.js` en donde debemos hacer el requerimie
 
 ```javascript
 // Fragmento del archivo app.js
-
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -173,3 +171,71 @@ En nuestro archivo `db.js` nos preocuparemos de manejar las conexiones a la db q
 * desconectado.
 
 Los constructos usando el metodo de mongoose es:
+
+`mongose.connection.on('estado', callback)`
+
+Notamos que el monitoreo de la conexion opera sobre el evento `on` de node. Tenemos entonces:
+
+```javascript
+mongoose.connection.on('conectado', function(){
+  console.loh('Mongoose conectado a ' + dbURI);
+});
+mongoose.connection.on('error', function(err){
+  console.log('Mongoose error de conexion ' + err)
+});
+mongoose.connection.on('desconectado', function(){
+  console.log('Mongoose desconectado');
+});
+```
+Estos son los constructors basicos para manejar conexiones en mongoose utilizando el evento `on` de node.
+
+## Cierre de conexiones.
+
+El cierre de conexiones es una buena practica cuando notamos que la conexion se termina. La conexion en este caso que establecemos tiene dos puntos: una en nuestra aplicacion y otra en Mongo. Lo que tenemos que hacer aca es decirle a Mongo que queremos cerrar la conexion que hemos abierto.
+
+Para monitear el estado de las conexiones necesitamos escuchar los procesos en node. Debemos escuchar el proceso `SIGINT` y otros dos procesos mas.
+
+La sintaxis para manejar los eventos de conexion es la siguiente:
+
+```javascript
+var mongoose = require('mongoose');
+var dbURI = 'mongodb://localhost/Loc8r';
+mongoose.connect(dbURI);
+
+mongoose.connection.on('connected', function(){
+  console.log('Mongoose conectado a ' + dbURI);
+});
+mongoose.connection.on('error', function(err){
+  console.log('Mongoose error de conexion ' + err);
+});
+mongoose.connection.on('desconnected', function(){
+  console.log('Mongose desconectado');
+});
+// funcion que cierra conexciones.
+var gracefullShutDown = function(msg, callback){
+  mongoose.connection.close(function(){
+    console.log('Mongoose desconectado a traves de ' + msg);
+    callback();
+  });
+};
+// Los siguientes son eventos que escuchan los procesos de node para cerrar las conexiones.
+// evento 1: reinicio de nodemon.
+process.once('SIGUSR2', function(){
+  gracefullShutDown('nodemon restart', function(){
+    process.kill(process.pid, 'SIGUSR2');
+  });
+});
+// finalizacion de la app
+process.on('SIGINT', function(){
+  gracefullShutDown('app termination', function(){
+    process.exit(0);
+  });
+});
+// finalizacion en HEROKU.
+process.on('SIGTERM', function(){
+  gracefullShutDown('Heroku app shutdown', function(){
+    process.exit(0);
+  });
+});
+```
+Este codigo es reusable en el caso de que estemos implementando un flujo de trabajo que incluya nodemon para la visualizacion de cambios de nuestra app, el deployado en heroku etc.
