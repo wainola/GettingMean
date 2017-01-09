@@ -90,4 +90,79 @@ Notamos que luego de la importacion de express importamos tambien el metodo `Rou
 
 Los controladores son la ultima frontera entre nuestra aplicacion y la base de datos. Como tales son los que se llevan a aca la carga de codigo mayor relacionada con el trabajo con la api.
 
-Los modulos de controladores con los que trabajaremos van a ser funciones con dos 
+Los modulos de controladores con los que trabajaremos van a ser funciones con dos argumentos: `req` y `res`. Con estos dos argumentos vamos a manejar las interacciones de nuestra api.
+
+Tenemos entonces:
+
+```javascript
+module.exports.locationsCreate = function(req, res){
+
+};
+```
+
+Para retornar en el formato JSON hacemos:
+
+```javascript
+module.exports.locationsCreate = function(req, res){
+  res.status(200); // operacion ok
+  res.json({"status": "success"});
+};
+```
+
+De manera mas sofisticada podemos crear una funcion para enviar respuestas mas personalizadas:
+
+```javascript
+var enviarRespuestaJson = function(res, status, content){
+  res.status(status);
+  res.json(content)
+};
+
+module.exports.locationsCreate = function(req, res){
+  enviarRespuestaJson(res, 200, {"status": "success"});
+};
+```
+
+Lo cual deja el codigo mas ordenado.
+
+# Inclusion del modelo.
+
+No podemos trabajar en la API con la db si no incluimos el modelo. Para eso debemos requerir `mongoose` asi como requerir el modelo:
+
+```javascript
+var mongoose = require('mongoose');
+var Loc = mongoose.model('Location');
+```
+
+# Metodos GET: leyendo datos de la db.
+
+El metodo `GET` es un metodo de consulta. En mongoose tenemos una serie de metodos utiles para buscar elementos particulares de nuestra db:
+
+* find.
+* findById.
+* findOne.
+* geoNear.
+* geoSearch.
+
+El metodo que mas usaremos sera el de `findById` que debe ser usado aparejado con el metodo `exec`, en donde se carga la funcion que procesa los datos.
+
+Por ejemplo queremos leer datos de alguna entrada de datos en nuestra db. La ruta es:
+
+```javascript
+app.get('/api/locations/:locationid', ctrl.locationsReadOne);
+```
+
+Dada esta ruta tenemos nuestro modulo:
+
+```javascript
+module.exports.locationsReadOne = function(req, res){
+  Loc
+    .findById(req.params.locationid)
+    .exec(function(err, location){
+      enviarRespuestaJson(res, 200, location);
+    });
+};
+```
+
+En el modulo partimos usando el metodo `findById` cuyo parametro a usar es el parametro del request pedido a la url, en este caso el id de la locacion. Ese valor es pasado al metodo `exec()` quien envia la respuesta y el contenido.
+
+# Atrapando errores.
