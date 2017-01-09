@@ -295,4 +295,35 @@ En mongoose este `schema` es definido de la siguiente manera:
   apellido: String
 }
 ```
-Dado que en este caso estamos trabajando con 
+Dado que en este caso estamos trabajando con una pagina que busca crear reseñas de lugares, al modelo de nuestra db le pondremos un nombre referente a el tipo de datos que vamos a guardar ahi, que en este caso es el de locaciones. Por lo que en el mismo directorio de `models` donde tenemos guardado nuestro archivo `db.js` vamos a crear un archivo llamada `locations.js` que servira como nuestra `schema` de nuestra db.
+
+Luego de creado el archivo para definir el `schema` requerimos le archivo en nuestro archivo `db.js`:
+
+```javascript
+require('./locations');
+```
+
+Luego en nuestro archivo `locations.js` donde hemos vamos a definir nuestro `schema` hacemos:
+
+```javascript
+var mongoose = require('mongoose');
+var locationSchema = new mongoose.Schema({});
+```
+
+La funcion `new mongoose.Schema({});` es la que nos va a permitir crear los `schemas` tanto de documentos como de subdocumentos de nuestra aplicacion.
+
+Notamos que en nuestra pagina, fundamentalmente en el archivo controlador, la vista carga y renderiza la siguiente informacion:
+
+```javascript
+locations: [{
+  name: 'Starcups',
+  address: 'Pericles 1580, depto 202',
+  rating: 3,
+  facilities: ['Buen cafe artesanal', 'wifi de mucho poder', 'Comida gourmet'],
+  distance: ' 100m'
+}]
+```
+En razon de eso podemos definiri inmediatamente el `schema`:
+
+```javascript
+var location
