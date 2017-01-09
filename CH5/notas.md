@@ -323,7 +323,149 @@ locations: [{
   distance: ' 100m'
 }]
 ```
-En razon de eso podemos definiri inmediatamente el `schema`:
+En razon de eso podemos definir inmediatamente el `schema`:
 
 ```javascript
-var location
+var locationSchema = new mongoose.Schema({
+  name: String,
+  address: String,
+  rating: {type: Number, "default": 0},
+  facilities: [String],
+  distance: String
+});
+```
+Inmediatamente podemos añadir validaciones de datos que corresponden a campos requeridos. En primera instancia como estamos comunicando entre la base y la app directamente a traves de consola, los mensajes de errores van a ser impresos en la consola. Por ejemplo podemos pedir que el campo `name` sea un campo requerido dandole dentro del objeto el atributo `required`.
+
+Las validaciones tambien pueden ser numero para campos como `rating` en donde existe un tope de valores que pueden tomar este campo. En el caso de las coordenadas geograficas, el campo seria:
+
+```javascript
+var locationSchema = new mongoose.Schema({
+  name: String,
+  address: String,
+  rating: {type: Number, "default": 0},
+  facilities: [String],
+  distance: String,
+  coords: {type: [Number], index: '2dsphere'}
+});
+```
+La ruta del indice es del tipo `2dsphere`.
+
+Muchas veces las bases de datos en mongo van a manejar subdocumentos, que en este caso son documentos dentro de documentos. Las definiciones de como lidiamos con documentos dependen de los requerimientos que la aplicacion que estamos diseñando tiene. En este caso dado que tenemos un documentos principal llamado `locations`, tenemos que añadir como subdocumentos las reseñas, que en ultima instancia seran campos añadidos en comunicacion desde el cliente hacia el servidor. En el caso de los subdocumentos podemos definir el schema como sigue:
+
+```javascript
+var openingTimesSchema = new mongoose.Schema({
+  days: {type: String, required: true},
+  opening: String,
+  closing: String,
+  closed: {type: Boolean, required: true}
+});
+```
+
+Es de notar que las definiciones de los subesquemas de los subdocumentos deben hacerse sobre el esquema general del documento. En ese caso, todos los esquemas de los subdocumentos van sobre el esquema general. El codigo final nos quedaria como sigue:
+
+```javascript
+var mongoose = require('mongoose');
+var reviewSchema = new mongoose.Schema({
+  author: String,
+  rating: {type: Number, "default": 0, min: 0, max: 5},
+  reviewText: String,
+  createdOn: {type: Date, "default": Date.now}
+});
+var openingTimesSchema = new mongoose.Schema({
+  days: {type: String, required: true},
+  opening: String,
+  closing: String,
+  closed: {type: Boolean, required: true}
+});
+var locationSchema = new mongoose.Schema({
+  name: String,
+  address: String,
+  rating: {type: Number, "default": 0},
+  facilities: [String],
+  distance: String,
+  coords: {type: [Number], index: '2dsphere'},
+  openingTimes: [openingTimesSchema],
+  reviews: [reviewSchema]
+});
+```
+
+Definido el `schema` de nuestra base de datos debemos compilarlos. Notamos que la aplicacion no trabajar con el `schema` sino que con la version compilada. En nuestro archivo sobre el cual definimos el `schema` añadimos:
+
+```javascript
+var mongoose = require('mongoose');
+var reviewSchema = new mongoose.Schema({
+  author: String,
+  rating: {type: Number, "default": 0, min: 0, max: 5},
+  reviewText: String,
+  createdOn: {type: Date, "default": Date.now}
+});
+var openingTimesSchema = new mongoose.Schema({
+  days: {type: String, required: true},
+  opening: String,
+  closing: String,
+  closed: {type: Boolean, required: true}
+});
+var locationSchema = new mongoose.Schema({
+  name: String,
+  address: String,
+  rating: {type: Number, "default": 0},
+  facilities: [String],
+  distance: String,
+  coords: {type: [Number], index: '2dsphere'},
+  openingTimes: [openingTimesSchema],
+  reviews: [reviewSchema]
+});
+
+mongoose.model('Location', locationSchema);
+```
+
+El primer parametro del metodo model hace referencia al nombre del modelo compilado, y el segundo al schema.
+
+# Creacion de colecion y documentos en mongo.
+
+Las db no necesitan ser creadas para trabajar sobre ellas en mongo. Si queremos añadir entradas hacemos:
+
+```javascript
+db.locations.save({
+  name: 'Starcups',
+  address: '125 High Street, Reading, RG6 1PS',
+  rating: 3,
+  facilities: ['Hot drinks', 'Food', 'Premium wifi'],
+  coords: [-0.9690884, 51.455041],
+  openingTimes: [{
+    days: 'Monday - Friday',
+    opening: '7:00am',
+    closing: '7:00pm',
+    closed: false
+  }, {
+    days: 'Saturday',
+    opening: '8:00am',
+       closing: '5:00pm',
+    closed: false
+  }, {
+    days: 'Sunday',
+    closed: true
+  }]
+});
+```
+Con esto tenemos creada una nueva coleccion en `locations` y ademas añadimos nuestro primer documento en la coleccion. Es conveniente antes de hacer esto usar el comando `use <nombreDB>` para luego poder guardar usando el comando `db.<nombreDB>.save({});`.
+
+Para añadir subdocumentos usamos el comando `db.<nombreDB>.update({});`. El metodo toma dos argumentos en notacion literal. El primero es el nombre de la db que queremos actualizar y el segundo es el elemento que queremos añadir: en este caso una reseña:
+
+```javascript
+db.locations.update({
+  name: 'Starcups'
+}, {
+  $push: {
+    reviews: {
+      author: 'Nicolas Riquelme',
+      id: ObjectId(),
+      rating: 5,
+      timestamp: new Date('Dic 24, 2016'),
+      reviewText: 'What a great place. I can\'t  say enough good things about it.'
+    }
+  }
+});
+```
+
+Con estos dos comandos podemos ir llenando la db de contenido que luego sera usada mediante la arquitectura API Rest.
