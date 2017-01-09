@@ -166,3 +166,32 @@ module.exports.locationsReadOne = function(req, res){
 En el modulo partimos usando el metodo `findById` cuyo parametro a usar es el parametro del request pedido a la url, en este caso el id de la locacion. Ese valor es pasado al metodo `exec()` quien envia la respuesta y el contenido.
 
 # Atrapando errores.
+
+Parte importante de trabajar con APIS es verificar y atrapar errores, por lo que podemos modificar el modulo que hemos diseñado justamente para hacer eso:
+
+```javascript
+module.exports.locationsReadOne = function(req, res){
+  if(req.params && req.params.locationid){
+    Loc
+      .findById(req.params.locationid)
+      .exec(function(err, location){
+        if(!location){
+          enviarRespuestaJson(res, 404, {"message": "locationid not found"});
+          return;
+        }
+        else if(err){
+          enviarRespuestaJson(res, 404, err);
+        }
+        enviarRespuestaJson(res, 200, location);
+      });
+  } else{
+    enviarRespuestaJson(res, 404, {"message": "No locationid in request"});
+  }
+};
+```
+Este es el codigo final del controlador. Notamos particularidades:
+
+* el primer `if` revisa que se cumpla que hayamos ingresado bien la direcccion y que la direccion contenga al menos un id.
+* pasado el condicional carga el modelo y envia el metodo `findById` con el metodo `exec()`.
+* el metodo `exec()` tiene dentro suyo varios atrapa errores. el primero se preocupa de saber si la locacion exisite o no. De no ser asi, indica que esta no ha sido encontrada. El segundo es referente a si por abc motivo se produce un error y que dado ese error imprima otro mensaje. Fianlmente si nada de eso pasa, es decir que los parametros ingresados son exitosos, entonces que envie el contenido.
+* Si los parametros ingresados no son correctos, envia otro mensaje final de error.
