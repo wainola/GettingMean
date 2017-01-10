@@ -47,7 +47,7 @@ module.exports.locationsListByDistance = function(req, res){
   };
   var geoOptions = {
     spherical: true,
-    maxDistance: theEarth.getRadsFromDistance(20),
+    maxDistance: theEarth.getRadsFromDistance(100000),
     num: 10
   };
   if(!lng || !lat){
@@ -62,7 +62,7 @@ module.exports.locationsListByDistance = function(req, res){
       locations.push({
         distance: theEarth.getDistanceFromRads(doc.dis),
         name: doc.obj.name,
-        address: dob.obj.address,
+        address: doc.obj.address,
         rating: doc.obj.rating,
         facilities: doc.obj.facilities,
         _id: doc.obj._id

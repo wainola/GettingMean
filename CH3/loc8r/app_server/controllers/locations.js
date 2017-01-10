@@ -8,7 +8,7 @@ if(process.env.NODE_ENV === 'production'){
 };
 
 var renderHomePage = function(req, res, responseBody){
-  res.render('location-list', {
+  res.render('locations-list', {
     title: ' Loc8r - find a place to work with wifi',
     pageHeader: {
       title: 'Loc8r',
@@ -30,12 +30,13 @@ module.exports.homelist = function(req, res){
     qs: {
       lng: -0.7992599,
       lat: 51.378091,
-      maxDistance: 20
+      maxDistance: 200000000000
     }
   };
   request(
     requestOptions,
     function(err, response, body){
+      console.log("entre!");
       renderHomePage(req, res, body);
     }
   );
