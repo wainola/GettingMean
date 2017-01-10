@@ -1,33 +1,45 @@
-/* Obtener pagina principal*/
-module.exports.homelist = function(req, res){
-  res.render('locations-list', {
-    title: 'Loc8r - find a placer to work with wifi',
+var request = require('request');
+var apiOptions = {
+  server: "http://localhost:3000"
+};
+
+if(process.env.NODE_ENV === 'production'){
+  apiOptions.server = "https://dry-ocean-36724.herokuapp.com/";
+};
+
+var renderHomePage = function(req, res, responseBody){
+  res.render('location-list', {
+    title: ' Loc8r - find a place to work with wifi',
     pageHeader: {
       title: 'Loc8r',
-      strapline: 'Find places to work with wifi near you!',
+      strapline: 'Find a place to work with wifi near you!'
     },
     sidebar: 'Looking for wifi and seat? Loc8r helps you find places to work when out and about. Perhaps with coffe, cake or a pint? Let Loc8r help you find the place you\'re looking for.',
-    locations: [{
-      name: 'Starcups',
-      address: '125 High Street, Reading, RG6 1PS',
-      rating: 3,
-      facilities: ['Hot drinks', 'Food', 'Premiun wifi'],
-      distance: '100m'
-    }, {
-      name: 'Cafe Hero',
-      address: '125 High Street, Reading, RG6 1PS',
-      rating: 4,
-      facilities: ['Hot drinks', 'Food', 'Premiun wifi'],
-      distance: '200m'
-    }, {
-      name: 'Burguer Queen',
-      address: '125 High Street, Reading, RG6 1PS',
-      rating: 2,
-      facilities: ['Food', 'Premiun wifi'],
-      distance: '250 m'
-    }]
+    locations: responseBody
   });
-}
+};
+
+/* Obtener pagina principal*/
+module.exports.homelist = function(req, res){
+  var requestOptions, path;
+  path = '/api/locations';
+  requestOptions = {
+    url: apiOptions.server + path,
+    method: 'GET',
+    json: {},
+    qs: {
+      lng: -0.7992599,
+      lat: 51.378091,
+      maxDistance: 20
+    }
+  };
+  request(
+    requestOptions,
+    function(err, response, body){
+      renderHomePage(req, res, body);
+    }
+  );
+};
 
 /* GET 'Location info' page */
 module.exports.locationInfo = function(req, res) {
