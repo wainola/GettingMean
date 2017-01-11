@@ -7,7 +7,55 @@ if(process.env.NODE_ENV === 'production'){
   apiOptions.server = "https://dry-ocean-36724.herokuapp.com/";
 };
 
+var _isNumeric = function (n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+};
+
+var _formatDistance = function (distance) {
+  var numDistance, unit;
+  if (distance && _isNumeric(distance)) {
+    if (distance > 1) {
+      numDistance = parseFloat(distance).toFixed(1);
+      unit = 'km';
+    } else {
+      numDistance = parseInt(distance * 1000,10);
+      unit = 'm';
+    }
+    return numDistance + unit;
+  } else {
+    return "?";
+  }
+};
+
+var _showError = function (req, res, status) {
+  var title, content;
+  if (status === 404) {
+    title = "404, page not found";
+    content = "Oh dear. Looks like we can't find this page. Sorry.";
+  } else if (status === 500) {
+    title = "500, internal server error";
+    content = "How embarrassing. There's a problem with our server.";
+  } else {
+    title = status + ", something's gone wrong";
+    content = "Something, somewhere, has gone just a little bit wrong.";
+  }
+  res.status(status);
+  res.render('generic-text', {
+    title : title,
+    content : content
+  });
+};
+
 var renderHomePage = function(req, res, responseBody){
+  var message;
+  if(!(responseBody instanceof Array)){
+    message = 'API lookup error';
+    responseBody = [];
+  } else {
+    if(!responseBody.length){
+      message = 'No places found nearby';
+    }
+  }
   res.render('locations-list', {
     title: ' Loc8r - find a place to work with wifi',
     pageHeader: {
@@ -15,7 +63,8 @@ var renderHomePage = function(req, res, responseBody){
       strapline: 'Find a place to work with wifi near you!'
     },
     sidebar: 'Looking for wifi and seat? Loc8r helps you find places to work when out and about. Perhaps with coffe, cake or a pint? Let Loc8r help you find the place you\'re looking for.',
-    locations: responseBody
+    locations: responseBody,
+    message: message
   });
 };
 
@@ -36,11 +85,18 @@ module.exports.homelist = function(req, res){
   request(
     requestOptions,
     function(err, response, body){
-      console.log("entre!");
+      var i, data;
+      data = body;
+      if(response.statusCode === 200 && data.length){
+        for(i=0; i<data.length; i++){
+          data[i].distance = _formatDistance(data[i].distance);
+        }
+      }
       renderHomePage(req, res, body);
     }
   );
 };
+
 
 /* GET 'Location info' page */
 module.exports.locationInfo = function(req, res) {
