@@ -92,7 +92,7 @@ module.exports.homelist = function(req, res){
           data[i].distance = _formatDistance(data[i].distance);
         }
       }
-      renderHomePage(req, res, body);
+      renderHomePage(req, res, data);
     }
   );
 };

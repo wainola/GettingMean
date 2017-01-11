@@ -209,4 +209,98 @@ var renderHomePage = function(req, res, responseBody){
   });
 };
 ```
-Podemos testear esto en el navegador al actualizar nuestro controlador. 
+Podemos testear esto en el navegador al actualizar nuestro controlador.
+
+# Definiendo mensajes de salida basados en los datos de respuesta.
+
+**Nota: ya hemos solucionado casi todos estos problemas pero se hace relevante tomar algunas notas relativas al trabajo con la API en el cliente.**
+
+Notamos que tenemos nuestra funcion `renderHomePage`:
+
+```javascript
+var renderHomePage = function(req, res, responseBody){
+  res.render('location-list', {
+    title: ' Loc8r - find a place to work with wifi',
+    pageHeader: {
+      title: 'Loc8r',
+      strapline: 'Find a place to work with wifi near you!'
+    },
+    sidebar: 'Looking for wifi and seat? Loc8r helps you find places to work when out and about. Perhaps with coffe, cake or a pint? Let Loc8r help you find the place you\'re looking for.',
+    locations: responseBody
+  });
+};
+```
+
+Esta funcion es la encargada de renderizar los elementos de la pagina principal de manera tal que se desplieguen dinamicamente con la llamada interna a la api. **Notamos que esto funciona asi debido a que usando el modulo `request` usamos una url que le pasamos al modulo para poder trabajar. Esta url es la url que sirve para listar los elementos de la API**.
+
+Volviendo al tema: la funcion `renderHomePage` lo que deberia hacer es poder pasar a la vista un arreglo sobre el cual podamos iterar usando las capacidades de `jade`. Esto implica que podriamos estar en vista de diferentes tipos de datos que necesitamos manejar de manera apropiada:
+
+El `responseBody` podria ser tres cosas:
+
+* un arreglo de locaciones.
+* un arreglo vacio sin locaciones encontradas.
+* una cadena conteniendo mensajes que la API retorna debido a los errores.
+
+Ya tenemos el codigo para lidiar con la opcion del arreglo:
+
+```javascript
+request(
+  requestOptions,
+  function(err, response, body){
+    var i, data;
+    data = body;
+    if(response.statusCode === 200 && data.length){
+      for(i=0; i<data.length; i++){
+        data[i].distance = _formatDistance(data[i].distance);
+      }
+    }
+    renderHomePage(req, res, data);
+  }
+);
+```
+Aca el parametro `body` es asignado a la variable `data`. Asumimos que ese parametro corresponde a un arreglo, por lo que se llevan a cabo dos verificaciones: el codigo de estado de la respuesta y el largo del arreglo. En este caso si la API retorna el mensaje de OK independiente de que retorne, entonces corremos un ciclo para formatear la distancia y luego llamamos a la funcion para enviar los datos. Nuevamente, aca estamos contando de que el retorno de los datos sera exitoso.
+
+Ahora nos toca lidiar con lo otro: el caso de que el retorno de los datos no sea exitoso.
+
+Para hacer esto necesitamos actualizar nuestra funcion `renderHomePage` para que haga lo siguiente:
+
+* generar una variable que contenga un mensaje.
+* chequear que el `body` de la respuesta sea un arreglo, y de no serlo enviar el mensaje apropiado.
+* si la respuesta es un arreglo, generar un mensaje diferente en el caso de que este vacio.
+* enviar el mensaje a la vista.
+
+Esto lo logramos con el siguiente codigo:
+
+```javascript
+var renderHomePage = function(req, res, responseBody){
+  var message;
+  if(!(responseBody instanceof Array)){
+    message = 'API lookup error';
+    responseBody = [];
+  } else {
+    if(!responseBody.length){
+      message = 'No places found nearby';
+    }
+  }
+  res.render('locations-list', {
+    title: ' Loc8r - find a place to work with wifi',
+    pageHeader: {
+      title: 'Loc8r',
+      strapline: 'Find a place to work with wifi near you!'
+    },
+    sidebar: 'Looking for wifi and seat? Loc8r helps you find places to work when out and about. Perhaps with coffe, cake or a pint? Let Loc8r help you find the place you\'re looking for.',
+    locations: responseBody,
+    message: message
+  });
+};
+```
+
+Utilizando el operador `instanceof` verificamos que el arreglo sea una instancia de un arreglo. Usamos una sentencia en negativo para verificar que, si la instancia de un arreglo, entonces mande el mensaje correspondiente. En el caso de que la instancia sea un string, ignorara el resultado booleano, y se ejecutara de todos modos el condicional, generando esta vez un arreglo, asignando `responseBody`. Notamos que para que esto suceda, para que `responseBody` sea un arreglo, es que `responseBody` paso como otra instancia pero no un arreglo. En este caso se generar la asignacion.
+
+Luego el `else` lo que hace es evaluar que, en caso de que la respuesta sea un arreglo, que este no tenga longitud. En este caso resulta que el arreglo esta vacio.
+
+Finalmente hacemos la asignacion del nuevo atributo, generando una propiedad `message` con el valor del mensaje.
+
+Actualizamos nuestro motor de plantillas para cargar como error el mensaje en caso de sucederce.
+
+# Seleccionando documentos desde la API. La pagina de detalles.
