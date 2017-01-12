@@ -304,3 +304,150 @@ Finalmente hacemos la asignacion del nuevo atributo, generando una propiedad `me
 Actualizamos nuestro motor de plantillas para cargar como error el mensaje en caso de sucederce.
 
 # Seleccionando documentos desde la API. La pagina de detalles.
+
+Cuando tenemos cargada nuestra pagina principal tenemos las listas de locaciones que hemos ingresado previamente a la API. Ahora lo que nos toca hacer es regular la situacion cuando hacemos click en alguna de estas locaciones para ver la informacion particular de esta. Es decir debemos pedir los datos particulares de una de las locaciones.
+
+# Configurando las urls en las rutas para acceder a documentos especificos con Mongo.
+
+La ruta actual que tenemos para ver las locaciones particulares es `/locations`. Esto porque el controlador tiene la informacion en su interior y la renderiza directamente. Lo que queremos hacer es que, en base a un evento click, podamos obtener una locacion particular.
+
+En nuestra API nosotros podemos obtener locaciones particulares al ingresar la ruta `/api/locations/:locationid`. Podemos hacer esto mismo en el lado cliente para el caso de las rutas de nuestra aplicacion principal en express. Hacemos esto en nuestro archivo `index.js`:
+
+```javascript
+var express = require('express');
+var router = express.Router();
+var ctrlLocations = require('../controllers/locations');
+var ctrlOther = require('../controllers/others');
+
+/* Locaciones de las paginas.*/
+router.get('/', ctrlLocations.homelist);
+router.get('/location/:locationid', ctrlLocations.locationInfo); // añadimos el parametro /:locationid
+router.get('/location/review/new', ctrlLocations.addReview);
+
+/* Pagina otros */
+router.get('/about', ctrlOther.about);
+
+module.exports = router;
+```
+
+Ya que tenemos la ruta seteada en nuestro archivo `index.js` entonces ahora podemos comenzar a trabajar directamente con el controlador.
+
+Una pregunta que se nos aparece con lo que acabamos de hacer es como obtenemos el ID de las locaciones particulares. Pensando en la aplicacion como un todo el mejor lugar para comenzar es la pagina principal. Lo que podemos hacer es asignar de antemando el ID de cada locacion que hemos llamado en la pagina principal, y asignarlo a algun elemento html con el cual estemos trabajando. Esa seria una solucion parcial.
+
+```jade
+extends layout
+
+include _includes/sharedHTMLfunctions
+
+block content
+  #banner.page-header
+    .row
+      .col-lg-6
+        h1= pageHeader.title
+          smalll &nbsp;#{pageHeader.strapline}
+
+  .row
+    .col-xs-12.col-sm-8
+      .error= message
+      .row.list-group
+      each location in locations
+        .col-xs-12.list-group-item
+          h4
+            a(href='/location/#{location._id}')= location.name
+            small &nbsp;
+              +outputRating(location.rating)
+            span.badge.pull-rigth.badge-default= location.distance
+          p.address= location.address
+          p
+            each facility in location.facilities
+              span.label.label-warning= facility
+              | &nbsp;
+    .col-xs-12.col-sm-4
+      p.lead= sidebar
+```
+
+Tenemos que en el apartado `h4 a(href='/location#{location._id}')= location.name` cada vez que llamamos a las locaciones en la pagina principal, podemos luego hacer la llamada a las locaciones particulares al asignar el id de la locacion directamente el link. Ahora tenemos entonces los links asignados a la ruta de la locacion + el id unico.
+
+# Moviendo el renderizado a una funcion.
+
+Nuevamente el renderizado de la pagina lo haremos a traves de una funcion que llame a la API desde el controlador.
+
+```javascript
+var renderDetailPage = function(req, res){
+  res.render('location-info', {
+    ...
+  });
+};
+module.exports.locationInfo = function(req, res){
+  renderDetailPage(req, res);
+};
+```
+
+Notamos que seguimos el mismo flujo de trabajo que hicimos para renderizar la pagina principal de nuestra aplicacion.
+
+# Consultando a la API por un ID unico y un parametro de URL.
+
+Dentro de la ruta que el controlador necesita invocar para llamar a un subdocumento particular esta la id del documento que queremos consultar. Para obtener estos valores podemos nuevamente usar `req.params` y añadirlo la ruta del `request` dentro de las opciones. El `request` es nuevamente uno de tipo `GET` por lo que la opcion `json` que le demos sera un objeto vacio.
+
+Sabiendo esto podemos usar el mismo parametro que usamos cuando creamos el controlador de la pagina principal y hacer el requerimiento a la API. Luego llamamos a la funcion que creamos para renderizar todo el contenido.
+
+```javascript
+module.exports.locationInfo = function(req, res){
+  var requestOptions, path;
+  path = '/api/locations/' + req.params.locationid; // obtiene el id de la locacion desde la URL y la adjunta.
+  requestOptions = {
+    url: apiOptions.server + path,
+    method: 'GET',
+    json: {}
+  };
+  request(
+    requestOptions,
+    function(err, response, body){
+      renderDetailPage(req, res);
+    }
+  );
+};
+```
+
+# Pasando los datos de la API a la vista.
+
+Asumiendo que la API esta retornando los datos correctos, necesitamos hacer un preprocesamiento de esos datos para poder exhibirlos en la pagina.
+
+```javascript
+module.exports.locationInfo = function(req, res){
+  var requestOptions, path;
+  path = '/api/locations/' + req.params.locationid; // obtiene el id de la locacion desde la URL y la adjunta.
+  requestOptions = {
+    url: apiOptions.server + path,
+    method: 'GET',
+    json: {}
+  };
+  request(
+    requestOptions,
+    function(err, response, body){
+      var data = body;
+      data.coords = {
+        lng: body.coords[0],
+        lat: body.coords[1]
+      };
+      renderDetailPage(req, res, data);
+    }
+  );
+};
+```
+
+Lo siguiente que haremos es actualizar el controlador para usar los datos que recibimos de la API en vez de los datos que estan dispuestos ya en el controlador mismo.
+
+```javascript
+var renderDetailPage = function(req, res, locDetail){
+  res.render('location-info', {
+    title: locDetail.name,
+    pageHeader: {title: locDetail.name},
+    sidebar: {
+      context: 'is on Loc8r because it has accessible wifi and space to sit down with your laptop and get some work done.',
+      callToAction: 'If you\'ve been and you like it - or if you don\'t - please leave a review to help other people just like you.'
+    },
+    location: locDetail
+  });
+};
+```
