@@ -451,3 +451,46 @@ var renderDetailPage = function(req, res, locDetail){
   });
 };
 ```
+
+Notamos que usamos el mismo enfoque para la pagina principal. Creamos una funcion que renderiza la vista y esa funcion es llamada cuando pasamos nuestro metodo `request`. Notamos que nuevamente, antes de llamar a nuestro metodo `request` generamos un objeto llamado `requestOptions` en el cual le damos los valores esenciales que vamos a recibir cuando hagamos la llamada:
+
+```javascript
+requestOptions = {
+  url: apiOptions.server + path,
+  method: 'GET',
+  json: {}
+};
+```
+Nuevamente le pasamos al metodo `request` estas opciones:
+
+```javascript
+request(
+  requestOptions,
+  function(err, response, body){
+    var data = body;
+    data.coords = {
+      lng: body.coords[0],
+      lat: body.coords[1]
+    };
+    renderDetailPage(req, res, data);
+  }
+);
+```
+
+Recordemos que el metodo `request` toma un parametro como opciones que es el objeto que ya mostramos, y luego toma la funcion callback en donde se pasan los datos. Notamos que el callback toma el `body` de respuesta que es un string en primera instancia y que luego pasa a ser un objeto, puesto que en las opciones del request generamos el atributo `json` como un objeto vacio. Y luego setea las coordenadas, creando un nuevo atributo del objeto con las cordenadas de la variable `body`. Finalmente hace la llamada a la funcion de renderizado:
+
+```javascript
+var renderDetailPage = function(req, res, locDetail){
+  res.render('location-info', {
+    title: locDetail.name,
+    pageHeader: {title: locDetail.name},
+    sidebar: {
+      context: 'is on Loc8r because it has accessible wifi and space to sit down with your laptop and get some work done.',
+      callToAction: 'If you\'ve been and you like it - or if you don\'t - please leave a review to help other people just like you.'
+    },
+    location: locDetail
+  });
+};
+```
+
+# Depurando los errores de vista.
