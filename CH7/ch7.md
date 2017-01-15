@@ -681,7 +681,7 @@ var getLocationInfo = function(req, res, callback){
   var requestOptions, path;
   path = '/api/locations/' + req.params.locationid;
   requestOptions = {
-    url: apiOptions.server + path;
+    url: apiOptions.server + path,
     method: 'GET',
     json: {}
   };
@@ -711,3 +711,4 @@ module.exports.addReview = function(req, res){
     renderReviewForm(req, res, responseData);
   });
 };
+```
