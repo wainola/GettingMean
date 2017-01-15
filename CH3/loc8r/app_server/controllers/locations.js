@@ -110,10 +110,28 @@ var renderDetailPage = function(req, res, locDetail){
 };
 /* GET 'Location info' page */
 module.exports.locationInfo = function(req, res){
+  getLocationInfo(req, res, function(req, res, responseData){
+    renderDetailPage(req, res, responseData);
+  });
+};
+/* Obtener la pagina 'Add review'*/
+module.exports.addReview = function(req, res){
+  getLocationInfo(req, res, function(req, res, responseData){
+    renderReviewForm(req, res, responseData);
+  });
+};
+// funcion que renderiza la vista de cada reseña.
+var renderReviewForm = function(req, res){
+  res.render('location-review-form', {
+    title: 'Review ' + locDetail.name + ' on Loc8r',
+    pageHeader: { title: 'Review ' + locDetail.name}
+  });
+};
+var getLocationInfo = function(req, res, callback){
   var requestOptions, path;
-  path = '/api/locations/' + req.params.locationid; // obtiene el id de la locacion desde la URL y la adjunta.
+  path = '/api/locations/' + req.params.locationid;
   requestOptions = {
-    url: apiOptions.server + path,
+    url: apiOptions.server + path;
     method: 'GET',
     json: {}
   };
@@ -126,15 +144,15 @@ module.exports.locationInfo = function(req, res){
           lng: body.coords[0],
           lat: body.coords[1]
         };
-        renderDetailPage(req, res, data);
+        callback(req, res, data);
       } else {
         _showError(req, res, response.statusCode);
       }
-    };
+    }
   );
 };
 
-/* Obtener la pagina 'Add review'*/
-module.exports.addReview = function(req, res){
-  res.render('location-review-form', {title: 'Add review'});
+// Funcion del metodo post para añadir reseñas.
+module.exports.doAddReview = function(req, res){
+
 };

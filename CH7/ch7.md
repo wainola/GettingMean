@@ -584,4 +584,130 @@ module.exports.locationInfo = function(req, res){
   );
 };
 ```
-# Añadiendo 
+# Añadiendo datos hacia la base de datos con la API.
+
+En esta seccion lo que veremos sera como tomar datos que son subidos por el usuario, procesarlos y añadirlos a la API para luego poder renderizarlos como una locacion nueva.
+
+En este caso los elementos que añadiremos seran las reseñas. Las reseñas pueden ser agregadas al presionar el boton `add review` cuando hacemos click en una locacion particular. Lo que queremos aqui hacer es llenar el formulario y enviarlo a la API.
+
+La lista de cosas que haremos sera:
+* debemos hacer que la reseña este conectada a la locacion a la cual queremos añadir.
+* debemos crear una ruta con un metodo POST.
+* debemos enviar los datos de la reseña a la API.
+* debemos mostrar la nueva reseña en la pagina de detalles.
+
+# Configurando las rutas y las vistas.
+
+La primera accion a tomar es que la reseña sea hecha en el contexto de la locacion. Para esot debemos trabajar con el id de la locacion que es el unico identificador unico que tenemos para trabajar con los elementos de nuestra base de datos.
+
+La mejor aproximacion para obtener el id en la pagina es ponerlo en la URL como lo hicimos para el caso de las paginas de detalles de las locaciones.
+
+# Definiendo dos rutas nuevas.
+
+Para obtener el id y asignarlo a la URL tenemos que cambiar la ruta del controlador para añadir reseñas. Al mismo tiempo debemos añadir un metodo `POST` con su ruta respectiva.
+
+```javascript
+var express = require('express');
+var router = express.Router();
+var ctrlLocations = require('../controllers/locations');
+var ctrlOther = require('../controllers/others');
+
+/* Locaciones de las paginas.*/
+router.get('/', ctrlLocations.homelist);
+router.get('/location/:locationid', ctrlLocations.locationInfo);
+router.get('/location/:locationid/review/new', ctrlLocations.addReview);
+router.post('/location/:locationid/reviews/new', ctrlLocations.doAddReview);
+
+/* Pagina otros */
+router.get('/about', ctrlOther.about);
+
+module.exports = router;
+```
+
+Notamos que añadimos el metodo `POST` y ademas añadimos en la URL el id de la locacion cuando vayamos a añadir una reseña.
+
+Ahora  debemos crear la funcion en el controlador para que `nodemon` no nos lance un error porque la funcion de las rutas no encuentra la funcion a la cual estamos asignando:
+
+```javascript
+module.exports.doAddReview = function(req, res){
+
+};
+```
+
+# Arreglando la vista de las locaciones.
+
+Lo que necesitamos es ahora añadir a la url de la pagina de reseñas, el id de la locacion de la cual venimos. Para esto tenemos que añadir el id de la locacion en el boton que presionamos cuando queremos añadir una nueva reseña.
+
+```jade
+a.btn.btn-default.pull-right(href="/location/#{location._id}/review/new")
+  Add review
+```
+
+Con esto al presionar el boto, tenemos el id de la locacion añadido y podemos entonces comenzar a trabajar bajo ese contexto.
+
+# Actualizando el formulario de reseñas desde la vista.
+
+Ahora lo que queremos es que el formulario postee a la URL correcta. Cuando el formulario es subido ahora, lo que hace es un requerimiento `GET` a la URL `/location` como se ve a continuacion:
+
+```jade
+form.form-horizontal(action='/location', method='get', role='form')
+```
+
+El cambio que debemos hacer en este caso es dejar vacio el atributo `action` y cambiar el metodo de `GET` a `POST`.
+
+```jade
+form.form-horizontal(action='', method='post', role='form')
+```
+# Creando una funcion nombrada para renderizar la reseña añadida.
+
+Al igual que en los otros metodos, necesitamos una manera de que, una vez creada la reseña, la rendericemos. Para eso aplicaremos el mismo metodo que hemos aplicado en otras ocasiones que es tener una funcion que se encargue del renderizado de las paginas:
+
+```javascript
+var renderReviewForm = function(req, res){
+  res.render('location-review-form', {
+    title: 'Review ' + locDetail.name + ' on Loc8r',
+    pageHeader: { title: 'Review ' + locDetail.name}
+  });
+};
+```
+Con esto ahora debemos obtener los datos de las reseñas de las locaciones.
+
+# Obteniendo los detalles de las locaciones.
+
+Lo que queremos ahora es obtener los datos de la reseña a traves del formulario y renderizarlos de la misma manera como lo hicimos con las reseñas previamente hechas. Para eso debemos obtener los datos de la locacion primero, ya que esa reseña debe ser añadida tambien al documento al cual pertenece la locacion, lo cual implica pegarle a la API una vez mas:
+
+```javascript
+var getLocationInfo = function(req, res, callback){
+  var requestOptions, path;
+  path = '/api/locations/' + req.params.locationid;
+  requestOptions = {
+    url: apiOptions.server + path;
+    method: 'GET',
+    json: {}
+  };
+  request(
+    requestOptions,
+    function(err, response, body){
+      var data = body;
+      if(response.statusCode === 200){
+        data.coords = {
+          lng: body.coords[0],
+          lat: body.coords[1]
+        };
+        callback(req, res, data);
+      } else {
+        _showError(req, res, response.statusCode);
+      }
+    }
+  );
+};
+module.exports.locationInfo = function(req, res){
+  getLocationInfo(req, res, function(req, res, responseData){
+    renderDetailPage(req, res, responseData);
+  });
+};
+module.exports.addReview = function(req, res){
+  getLocationInfo(req, res, function(req, res, responseData){
+    renderReviewForm(req, res, responseData);
+  });
+};
