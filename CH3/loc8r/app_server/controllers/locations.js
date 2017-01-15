@@ -154,5 +154,27 @@ var getLocationInfo = function(req, res, callback){
 
 // Funcion del metodo post para añadir reseñas.
 module.exports.doAddReview = function(req, res){
-
+  var requestOptions, path, locationid, postdata;
+  locationid = req.params.locationid;
+  path = '/api/locations' + locationid + '/reviews';
+  postdata = {
+    author: req.body.name,
+    rating: parseInt(req.body.rating, 10),
+    reviewText: req.body.review
+  };
+  requestOptions = {
+    url: apiOptions.server + path,
+    method: 'POST',
+    json: postdata
+  };
+  request(
+    requestOptions,
+    function(err, response, body){
+      if(response.statusCode === 201){
+        res.redirect('/location/' + locationid);
+      } else {
+        _showError(req, res, response.statusCode);
+      }
+    }
+  );
 };

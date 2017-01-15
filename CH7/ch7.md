@@ -712,3 +712,42 @@ module.exports.addReview = function(req, res){
   });
 };
 ```
+# Posteando la reseña a la API.
+
+Lo que haremos ahora sera:
+
+* obtener el id de la locacion que esta en la URL para construir nuestro requerimiento de la API.
+* hacer la llamda a la API.
+* mostrar que el envio de la nueva reseña fue exitoso.
+* Exhibir un mensaje en el caso de que no haya sido exitoso.
+
+Para eso necesitamos trabajar sobre el controlador `doAddReview`:
+
+```javascript
+module.exports.doAddReview = function(req, res){
+  var requestOptions, path, locationid, postdata;
+  locationid = req.params.locationid;
+  path = '/api/locations' + locationid + '/reviews';
+  postdata = {
+    author: req.body.name,
+    rating: parseInt(req.body.rating, 10),
+    reviewText: req.body.review
+  };
+  requestOptions = {
+    url: apiOptions.server + path,
+    method: 'POST',
+    json: postdata
+  };
+  request(
+    requestOptions,
+    function(err, response, body){
+      if(response.statusCode === 201){
+        res.redirect('/location/' + locationid);
+      } else {
+        _showError(req, res, response.statusCode);
+      }
+    }
+  );
+};
+```
+Con esto podemos crear la reseña y subirla y verla en la pagina de detalles. 
