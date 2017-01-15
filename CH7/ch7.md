@@ -663,7 +663,7 @@ form.form-horizontal(action='', method='post', role='form')
 Al igual que en los otros metodos, necesitamos una manera de que, una vez creada la reseña, la rendericemos. Para eso aplicaremos el mismo metodo que hemos aplicado en otras ocasiones que es tener una funcion que se encargue del renderizado de las paginas:
 
 ```javascript
-var renderReviewForm = function(req, res){
+var renderReviewForm = function(req, res, locDetail){
   res.render('location-review-form', {
     title: 'Review ' + locDetail.name + ' on Loc8r',
     pageHeader: { title: 'Review ' + locDetail.name}
@@ -750,4 +750,4 @@ module.exports.doAddReview = function(req, res){
   );
 };
 ```
-Con esto podemos crear la reseña y subirla y verla en la pagina de detalles. 
+Con esto podemos crear la reseña y subirla y verla en la pagina de detalles.
