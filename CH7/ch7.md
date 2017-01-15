@@ -751,3 +751,5 @@ module.exports.doAddReview = function(req, res){
 };
 ```
 Con esto podemos crear la reseña y subirla y verla en la pagina de detalles.
+
+# Protegiendo los datos con validaciones.
