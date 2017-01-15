@@ -492,5 +492,96 @@ var renderDetailPage = function(req, res, locDetail){
   });
 };
 ```
-
 # Depurando los errores de vista.
+
+Tenemos un problema con la vista. Por alguna razon no esta exhibiendo las reseñas de manera correcta. Revisemos uno por uno los problemas a los cuales nos estamos enfrentando.
+
+Partiendo por la vista tenemos que:
+
+```jade
+small.reviewTimestamp #{review.timestamp}
+```
+
+Ahora debemos revisar el `schema` para ver si hemos cambiado algo cuando definimos el modelo. El `schema` para las reseñas es:
+
+```javascript
+var reviewSchema = new mongoose.Schema({
+  author: String,
+  rating: {type: Number, "default": 0, min: 0, max: 5},
+  reviewText: String,
+  createdOn: {type: Date, "default": Date.now}
+});
+```
+Notamos que en el atributo `createdOn` es donde tenemos las fechas que permiten hacer referencia a cuando fueron creadas las reseñas. Podemos incorporar esto a las vistas haciendo:
+
+```jade
+small.reviewTimestamp #{review.createdOn}
+```
+Una ves recargada la pagina notamos que podemos exhibir las fechas pero en el formato en que son guardadas por el objeto `Date.now`. Por lo que ahora debemos formatear las fechas.
+
+Para aproximarnos a la manera en que podemos formatear las fechas lo que podemos hacer es nuevamente crear un `mixin` de `jade` para poder formatear la fecha de creacion de las reseñas de manera correcta.
+
+Tenemos lo siguiente:
+
+```jade
+mixin formatDate(dateString)
+  -var date = new Date(dateString);
+  -var d = date.getDate();
+  -var monthNames = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ];
+  -var m = monthNames[date.getMonth()];
+  -var y = date.getFullYear();
+  -var output = d + ' ' + m + ' ' + y;
+  =output
+```
+
+El mixin toma la fecha cuando es llamado en `ormatDate(dateString)`. Crea luego una variable con un nuevo objeto `Date` pasando el parametro que recibe la funcion. Luego dado un arreglo con los meses, formatea la fecha.
+
+Para llamar al mixin hacemos lo mismo que con el mixin anterior:
+
+```jade
+span.reviewAuthor #{review.author}
+small.reviewTimestamp
+  +formatDate(review.createdOn)
+```
+
+Con esto tenemos formateada las fechas con las cuales hemos creado las reseñas.
+
+# Creando paginas de errores especificas.
+
+¿Que sucede si no encontramos el ID de nuestra locacion? Deberiamos ser capaces en ese caso de enviar un mensaje de error personalizado. En este caso cuando se envia el ID de una locacion que no existe la API envia un mensaje de error del tipo 404. Este error se origina desde la URL del navegador, por lo que el navegador tambien deberia ser capaz de enviar un error del tipo 404.
+
+Desde la perspectiva del lado servidor atrapar los errores depende en general de como escuchemos los mensajes de estado de codigo que recibimos. En este caso debemos mirar en `response.statusCode`.
+
+# Atrapando todos los errores de codigo.
+
+Mejor que solamente atrapar los errores que corresponden a mensajes de estado del tipo 404, podemos simplemente enfocarnos en considerar que todo lo que no es codigo 200 debe ser considerado un error, por lo que podemos crear una funcion que maneje todos estos errores.
+
+La actualizacion de la funcion `location-info` queda como sigue:
+
+```javascript
+module.exports.locationInfo = function(req, res){
+  var requestOptions, path;
+  path = '/api/locations/' + req.params.locationid; // obtiene el id de la locacion desde la URL y la adjunta.
+  requestOptions = {
+    url: apiOptions.server + path,
+    method: 'GET',
+    json: {}
+  };
+  request(
+    requestOptions,
+    function(err, response, body){
+      var data = body;
+      if(response.statusCode === 200){
+        data.coords = {
+          lng: body.coords[0],
+          lat: body.coords[1]
+        };
+        renderDetailPage(req, res, data);
+      } else {
+        _showError(req, res, response.statusCode);
+      }
+    }
+  );
+};
+```
+# Añadiendo 
