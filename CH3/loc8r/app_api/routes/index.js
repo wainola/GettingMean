@@ -1,6 +1,5 @@
 var express = require('express');
 var router = express.Router();
-// Los siguientes archivos a incluir aun no se crean.
 var ctrlLocations = require('../controllers/locations');
 var ctrlReviews = require('../controllers/reviews');
 

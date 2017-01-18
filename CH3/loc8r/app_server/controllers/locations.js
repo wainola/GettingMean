@@ -56,6 +56,7 @@ var renderHomePage = function(req, res, responseBody){
       message = 'No places found nearby';
     }
   }
+  console.log(responseBody instanceof Array);
   res.render('locations-list', {
     title: 'Loc8r - find a place to work with wifi',
     pageHeader: {
