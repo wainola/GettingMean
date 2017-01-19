@@ -753,3 +753,132 @@ module.exports.doAddReview = function(req, res){
 Con esto podemos crear la reseña y subirla y verla en la pagina de detalles.
 
 # Protegiendo los datos con validaciones.
+
+Toda ves que una aplicacion acepta datos externos y los envia a una base de datos, necesitamos asegurarnos de que los datos esten completos y sean precisos. Es decir requerimos de generar cierto nivel de validacion de datos.
+
+En esta seccion vamos a ver maneras de validar los datos en nuestra aplicacion para prevenir que otras personas puedan enviar datos vacios.
+
+* haremos validaciones al nivel de schema usando Mongoose antes que los datos sean guardados.
+* al nivel de la aplicacion, validaremos antes que los datos sean posteados a la API.
+* en el cliente antes que los datos sean enviados.
+
+# Validando a nivel de schema.
+
+Validar antes de guardar es relevante y una buena practica. Por lo que aqui trabajamos directamente con mongoose.
+
+# Actualizando el schema.
+
+Generamos las instancias de validacion en el esquema de las reseñas.
+
+```javascript
+var reviewSchema = new mongoose.Schema({
+  author: {type: String, required: true},
+  rating: {type: Number, reqired: true, "default": 0, min: 0, max: 5},
+  reviewText: {type: String, required: true},
+  createdOn: {type: Date, "default": Date.now}
+});
+```
+
+Con esto ya no es posible enviar a la db datos vacios.
+
+# Atrapando errores de validacion con mongoose.
+
+Si intentamos entonces enviar datos a la db sin los campos requeridos mongoose enviara un error. Dado que es mongoosee el que sabe los campos que son requeridos, entonces debemos decirle a mongoose que nos avise para enviar nuestro mensaje de error. Por lo que tenemos que añadir el renderizado el error dentro de la funcion que trabaja con el añadido de las reseñas:
+
+
+```javascript
+request(
+  requestOptions,
+  function(err, response, body) {
+    if (response.statusCode === 201) {
+      res.redirect('/location/' + locationid);
+    } else if (response.statusCode === 400 && body.name && body.name === "ValidationError" ) {
+      res.redirect('/location/' + locationid + '/reviews/new?err=val');
+    } else {
+      console.log(body);
+      _showError(req, res, response.statusCode);
+    }
+  }
+);
+```
+
+Aqui vemos el codigo del error para el caso de la funcion request dentro del controlador `doAddReview`.
+
+# Enviar el mensaje de error en el navegador.
+
+Ahora que tenemos seteado el mensaje de error debemos desplegarlo en el navegador.
+
+```javascript
+// funcion que renderiza la vista de cada reseña.
+var renderReviewForm = function(req, res, locDetail){
+  res.render('location-review-form', {
+    title: 'Review ' + locDetail.name + ' on Loc8r',
+    pageHeader: { title: 'Review ' + locDetail.name},
+    error: req.query.err
+  });
+};
+```
+Ahora todo lo que queda por hacer es renderizar la info en nuestro motro de plantillas:
+
+```jade
+form.form-horizontal(action='', method='post', role='form')
+  - if (error == 'val')
+    .alert.alert-danger(role='alert') All fields required, please try again
+```
+Este tipo de validacion al nivel de la API es relevante, pues generalmente es un buen lugar para comenzar a asegurarnos que nuestros datos subidos sean consistentes.
+
+# Validando al nivel de la app.
+
+La validacion a nivel de la APP tambien sucede a nivel del controlador encargado de añadir las reseñas, es decir `doAddReview`:
+
+```javascript
+if (!postdata.author || !postdata.rating || !postdata.reviewText) {
+  res.redirect('/location/' + locationid + '/reviews/new?err=val');
+} else {
+  request(
+    requestOptions,
+    function(err, response, body) {
+      if (response.statusCode === 201) {
+        res.redirect('/location/' + locationid);
+      } else if (response.statusCode === 400 && body.name && body.name === "ValidationError" ) {
+        res.redirect('/location/' + locationid + '/reviews/new?err=val');
+      } else {
+        console.log(body);
+        _showError(req, res, response.statusCode);
+      }
+    }
+  );
+}
+```
+
+# Validando en el navegador con jquery.
+
+A nivel de navegador la validacion funciona escuchando los eventos encargados de enviar las validaciones. Usamos jQuery para estos efectos.
+
+```javascript
+$('#addReview').submit(function (e) {
+  $('.alert.alert-danger').hide();
+  if (!$('input#name').val() || !$('select#rating').val() || !$('textarea#review').val()) {
+    if ($('.alert.alert-danger').length) {
+      $('.alert.alert-danger').show();
+    } else {
+      $(this).prepend('<div role="alert" class="alert alert-danger">All fields required, please try again</div>');
+    }
+    return false;
+  }
+});
+```
+Esta validacion la añadimos al archivo en el directorio public, carpeta `javascripts` y luego lo llamamos desde el layout.jade.
+
+Con esto los datos se validan en el navegador sin que los datos sean enviados a ningun lado si que no estan correctos.
+
+# Resumen del capitulo.
+
+Hemos visto:
+
+* usar el modulo request para hacer llamadas a la API desde Express.
+* hacer requerimientos GET y POST a los endpoints de la API.
+* separar las preocupaciones respecto a las renderizaciones de la vista utilizando requerimientos a la base.
+* aplicar un simple patron para cada controlador.
+* usar los codigos de estatus para chequear exito o fracaso de la llamada a la API.
+* aplicar validaciones de datos para asegurarnos la consistencia de nuestros datos.
